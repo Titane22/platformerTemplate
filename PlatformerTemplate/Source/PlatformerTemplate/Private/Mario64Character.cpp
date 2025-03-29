@@ -12,6 +12,7 @@ AMario64Character::AMario64Character()
 	GetCharacterMovement()->MaxWalkSpeed = 230.f;
 	GetCharacterMovement()->GravityScale = 2.0f;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 720.0f); 
+
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AMario64Character::OnHit);
 }
 
@@ -23,6 +24,7 @@ void AMario64Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &AMario64Character::Sprint);
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMario64Character::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMario64Character::Look);
+		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AMario64Character::Crouch);
 	}
 	else
 	{
@@ -104,18 +106,33 @@ void AMario64Character::Look(const FInputActionValue& Value)
 
 void AMario64Character::Jump()
 {
+	// TODO: Check if Max Speed
+	if (bIsCrouching && bWasRunning)
+	{
+		if (GetWorld()->GetTimeSeconds() - CurrentCrouchTime <= LongJumpIdelTime)
+		{
+			return PerformLongJump();
+		}
+	}
+
+	// 공중에 있거나 이미 점프 중인 경우
 	if (GetCharacterMovement()->IsFalling() || bIsJumping)
 	{
-		if (bCanWallJump && GetWorld()->GetTimeSeconds() - CurrentWallHitTime <= WallJumpIdleTime)
+		// 벽 점프가 가능하고 허용 시간 내에 있는 경우
+		if (GetWorld()->GetTimeSeconds() - CurrentWallHitTime <= WallJumpIdleTime)
 		{
 			PerformWallJump();
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, TEXT("벽 점프 실행!"));
+			return;
 		}
 		else
 		{
+			// 벽 점프 조건이 아니면 추가 점프 안함
 			return;
 		}
 	}
 
+	// 지상에서의 점프 로직 (단일, 이중, 삼중 점프)
 	switch (JumpState)
 	{
 	case EJumpState::Single:
@@ -160,6 +177,24 @@ void AMario64Character::Jump()
 	}
 	bIsJumping = true;
 	Super::Jump();
+}
+
+void AMario64Character::PerformLongJump()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Jump::bIsCrouching && bWasRunning"));
+	Super::UnCrouch();
+
+	GetCharacterMovement()->JumpZVelocity = 700.0f;
+	GetCharacterMovement()->GravityScale = 2.4f;
+
+	FVector ForwardDirection = GetActorForwardVector() * 1800.0f;
+	ForwardDirection.Z = 1250.0f;
+
+	LaunchCharacter(ForwardDirection, true, true);
+
+	bIsCrouching = false;
+	bWasRunning = false;
+	return;
 }
 
 void AMario64Character::StopJumping()
@@ -228,31 +263,63 @@ void AMario64Character::CheckForTurn()
 
 void AMario64Character::Crouch(const FInputActionValue& Value)
 {
-	bool bIsCrouching = Value.Get<bool>();
-	if (bIsCrouching)
+	bool bWantToCrouching = Value.Get<bool>();
+	if (bWantToCrouching)
 	{
+		bWasRunning = bIsSprinting;
+		bIsCrouching = true;
+		CurrentCrouchTime = GetWorld()->GetTimeSeconds();
+
 		Super::Crouch();
+
+		if (bWasRunning)
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 350.0f;
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Crouch::bWasRunning"));
+			// TODO: 슬라이딩 커브
+		}
+		else
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 150.0f;
+		}
 	}
 	else
 	{
+		bIsCrouching = false;
+		bWasRunning = false;
+		GetCharacterMovement()->MaxWalkSpeed = 230.f;
 		Super::UnCrouch();
 	}
 }
 
 bool AMario64Character::IsWall(UPrimitiveComponent* Component, const FHitResult& Hit)
 {
-	// 충돌 응답 확인
-	if (!Component || Component->GetCollisionResponseToChannel(ECC_Pawn) != ECR_Block)
+	if (!Component)
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("IsWall: 충돌 컴포넌트 없음"));
+		return false;
+	}
+	
+	// 충돌 응답 확인
+	if (Component->GetCollisionResponseToChannel(ECC_Pawn) != ECR_Block)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("IsWall: 충돌 응답 Block 아님"));
 		return false;
 	}
 
 	// 충돌 법선 벡터 사용
 	FVector SurfaceNormal = Hit.Normal;
-	LastWallNormal = SurfaceNormal;
-	CurrentWallHitTime = GetWorld()->GetTimeSeconds();
+	
+	// 벽으로 인식되는 경우 (수직 표면)
+	bool bIsVerticalSurface = FMath::Abs(SurfaceNormal.Z) < 0.3f;
+	
+	if (bIsVerticalSurface)
+	{
+		LastWallNormal = SurfaceNormal;
+		CurrentWallHitTime = GetWorld()->GetTimeSeconds();
+	}
 
-	return FMath::Abs(SurfaceNormal.Z) < 0.3f;
+	return bIsVerticalSurface;
 }
 
 void AMario64Character::PerformWallJump()
@@ -284,35 +351,27 @@ void AMario64Character::OnSideSomersaultMontageEnded(UAnimMontage* Montage, bool
 {
 	bIsJumping = false;
 	bIsUTurn = false;
-
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, TEXT("OnSideSomersaultMontageEnded"));
 }
 
 void AMario64Character::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Somthing Hit"));
-
-	//if (OtherActor && OtherActor != this)
+	if (IsWall(OtherComp, Hit))
 	{
-		if (IsWall(OtherComp, Hit) && bIsJumping)
-		{
-			OnWallHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
-		}
-		else
-		{
-			OnObjectHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
-		}
+		OnWallHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+	}
+	else
+	{
+		OnObjectHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 	}
 }
 
 void AMario64Character::OnWallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("OnWallHit!!!!!!!!!!"));
 	bCanWallJump = true;
 }
 
 void AMario64Character::OnObjectHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("OnObjectHit!!!!!!!!!!"));
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("OnObjectHit!!!!!!!!!!"));
 }
 

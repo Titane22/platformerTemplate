@@ -40,6 +40,8 @@ protected:
 
 	virtual void Jump() override;
 
+	void PerformLongJump();
+
 	virtual void StopJumping() override;
 
 	virtual void Landed(const FHitResult& Hit);
@@ -71,11 +73,16 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
 	float WallJumpIdleTime = 0.15f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
+	float LongJumpIdelTime = 0.1f;
+
 	float CurrentJumpTime = 0.0f;
 
 	float CurrentMoveTime = 0.0f;
 
 	float CurrentWallHitTime = 0.0f;
+
+	float CurrentCrouchTime = 0.0f;
 
 	FVector CurrentDirection = FVector::ZeroVector;
 
@@ -83,11 +90,15 @@ protected:
 
 	bool bIsSprinting = false;
 
+	bool bIsCrouching = false;
+	
 	bool bIsUTurn = false;
 
 	bool bIsJumping = false;
 
 	bool bCanWallJump = false;
+
+	bool bWasRunning = false;
 
 	FVector LastWallNormal;
 
