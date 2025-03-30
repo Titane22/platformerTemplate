@@ -41,6 +41,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* BoxCollision;
 
+	/** Camera boom positioning the camera behind the character */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* CameraBoom;
+
 	FRaycastOrigins RaycastOrigins;
 
 	float SkinWidth = 0.015f;
@@ -60,7 +64,7 @@ private:
 
 public:
 	ASideScrollerCharacter();
-
+	
 protected:
 	void UpdateRaycastOrigins();
 
@@ -89,7 +93,13 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void BeginPlay() override;
+
+	/** Follow camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UCameraComponent* FollowCamera;
 public:
 	/** Returns BoxCollision subobject **/
 	FORCEINLINE class UBoxComponent* GetBoxCollision() const { return BoxCollision; }
+	/** Returns FollowCamera subobject **/
+	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };

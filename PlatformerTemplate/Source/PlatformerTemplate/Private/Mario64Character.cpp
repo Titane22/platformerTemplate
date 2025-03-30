@@ -6,13 +6,17 @@
 #include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-
+#include "Enemy/PT_Enemy.h"
+#include "Component/LakituCamera.h"
 AMario64Character::AMario64Character()
 {
+	LakituCameraComponent = CreateDefaultSubobject<ULakituCamera>(TEXT("Lakitu"));
+
+	JumpMaxHoldTime = 0.3f;
+
 	GetCharacterMovement()->MaxWalkSpeed = 230.f;
 	GetCharacterMovement()->GravityScale = 2.0f;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 720.0f); 
-
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AMario64Character::OnHit);
 }
 
@@ -36,10 +40,17 @@ void AMario64Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	// 점프 상태 업데이트
 	if (GetCharacterMovement()->IsMovingOnGround() && 
 		GetWorld()->GetTimeSeconds() - CurrentJumpTime > NextJumpMaxIdleTime)
 	{
 		JumpState = EJumpState::Single;
+	}
+
+	// 라키투 카메라 기능 활용
+	if (LakituCameraComponent)
+	{
+		LakituCameraComponent->AdjustCameraForMovement(DeltaSeconds);
 	}
 }
 
@@ -101,7 +112,11 @@ void AMario64Character::Move(const FInputActionValue& Value)
 
 void AMario64Character::Look(const FInputActionValue& Value)
 {
-	Super::Look(Value);
+	FVector2D RotationValue = Value.Get<FVector2D>();
+	if (LakituCameraComponent && !RotationValue.IsZero())
+	{
+		LakituCameraComponent->RotateCameraAroundTarget(RotationValue.X, RotationValue.Y);
+	}
 }
 
 void AMario64Character::Jump()
@@ -136,19 +151,19 @@ void AMario64Character::Jump()
 	switch (JumpState)
 	{
 	case EJumpState::Single:
-		GetCharacterMovement()->JumpZVelocity = 700.0f;
+		GetCharacterMovement()->JumpZVelocity = 500.0f;
 		GetCharacterMovement()->GravityScale = 2.0f;
 		JumpState = EJumpState::Double;
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, TEXT("Single"));
 		break;
 	case EJumpState::Double:
-		GetCharacterMovement()->JumpZVelocity = 980.0f;
+		GetCharacterMovement()->JumpZVelocity = 700.0f;
 		GetCharacterMovement()->GravityScale = 2.2f;
 		JumpState = EJumpState::Triple;
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Double"));
 		break;
 	case EJumpState::Triple:
-		GetCharacterMovement()->JumpZVelocity = 1260.0f;
+		GetCharacterMovement()->JumpZVelocity = 980.0f;
 		GetCharacterMovement()->GravityScale = 2.4f;
 		JumpState = EJumpState::Single;
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Triple"));
@@ -205,11 +220,20 @@ void AMario64Character::StopJumping()
 
 void AMario64Character::Landed(const FHitResult& Hit)
 {
-	Super::Landed(Hit);
+	if (APT_Enemy* Enemy = Cast<APT_Enemy>(Hit.GetActor()))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Destroy"));
+		LaunchCharacter(FVector(0.0f, 0.0f, 1000.0f), true, true);
+		Enemy->Destroy();
+	}
+	else
+	{
+		Super::Landed(Hit);
 
-	CurrentJumpTime = GetWorld()->GetTimeSeconds();
-	bCanWallJump = false;
-	CurrentWallHitTime = 0.0f;
+		CurrentJumpTime = GetWorld()->GetTimeSeconds();
+		bCanWallJump = false;
+		CurrentWallHitTime = 0.0f;
+	}
 }
 
 void AMario64Character::Sprint(const FInputActionValue& Value)

@@ -6,6 +6,7 @@
 #include "../PlatformerTemplateCharacter.h"
 #include "Mario64Character.generated.h"
 
+class ULakituCamera;
 
 UENUM(BlueprintType)
 enum class EJumpState : uint8
@@ -28,6 +29,10 @@ class PLATFORMERTEMPLATE_API AMario64Character : public APlatformerTemplateChara
 
 public:
 	AMario64Character();
+
+	/** 카메라 시스템을 강제로 리셋 */
+	UFUNCTION(BlueprintCallable, Category = "Camera")
+	void ResetCameraSystem() { bNeedCameraReset = true; }
 
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -59,6 +64,13 @@ protected:
 	void PerformWallJump();
 
 protected:
+	/** 라키투 카메라 컴포넌트 - 슈퍼 마리오 64 스타일 카메라 컨트롤 */
+	ULakituCamera* LakituCameraComponent;
+
+	/** 카메라 리셋이 필요한지 여부 */
+	bool bNeedCameraReset = false;
+
+	/** 점프 상태 (단일/이중/삼중) */
 	EJumpState JumpState = EJumpState::Single;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
