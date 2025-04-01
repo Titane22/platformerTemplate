@@ -7,6 +7,7 @@
 #include "Mario64Character.generated.h"
 
 class ULakituCamera;
+class ALadder;
 
 UENUM(BlueprintType)
 enum class EJumpState : uint8
@@ -33,6 +34,8 @@ public:
 	/** 카메라 시스템을 강제로 리셋 */
 	UFUNCTION(BlueprintCallable, Category = "Camera")
 	void ResetCameraSystem() { bNeedCameraReset = true; }
+
+	void ToggleClimbing(bool ToSetState, ALadder* ToSetLadde);
 
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -63,9 +66,28 @@ protected:
 
 	void PerformWallJump();
 
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+		const FHitResult& Hit);
+
+	void OnWallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+		const FHitResult& Hit);
+
+	void OnObjectHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+		const FHitResult& Hit);
+
+	UFUNCTION()
+	void OnSideSomersaultMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 protected:
-	/** 라키투 카메라 컴포넌트 - 슈퍼 마리오 64 스타일 카메라 컨트롤 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	ULakituCamera* LakituCameraComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USceneComponent* LegPoint;
 
 	/** 카메라 리셋이 필요한지 여부 */
 	bool bNeedCameraReset = false;
@@ -112,21 +134,17 @@ protected:
 
 	bool bWasRunning = false;
 
+	bool bCameDownLadder = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climbing")
+	bool bIsClimbing = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Climbing")
+	bool bClimbingHasInput = false;
+
 	FVector LastWallNormal;
 
-	UFUNCTION()
-	void OnSideSomersaultMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	UPROPERTY()
+	class ALadder* CurrentLadderRef;
 
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
-		const FHitResult& Hit);
-
-	void OnWallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
-		const FHitResult& Hit);
-
-	void OnObjectHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
-		const FHitResult& Hit);
 };

@@ -7,7 +7,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Enemy/PT_Enemy.h"
+#include "Obstacles/Ladder.h"
 #include "Component/LakituCamera.h"
+
 AMario64Character::AMario64Character()
 {
 	LakituCameraComponent = CreateDefaultSubobject<ULakituCamera>(TEXT("Lakitu"));
@@ -47,6 +49,48 @@ void AMario64Character::Tick(float DeltaSeconds)
 		JumpState = EJumpState::Single;
 	}
 
+	if (bIsClimbing)
+	{
+		// 올라가는 속도가 있는지 확인
+		float VerticalSpeed = GetCharacterMovement()->Velocity.Z;
+		if (FMath::Abs(VerticalSpeed) > 1.0f)
+		{
+			// 입력이 없는데 속도가 있다면 강제로 속도 리셋
+			if (!bClimbingHasInput)
+			{
+				GetCharacterMovement()->Velocity = FVector::ZeroVector;
+			}
+		}
+		
+		bClimbingHasInput = false;
+	}
+
+	if (bIsClimbing && bCameDownLadder)
+	{
+		FVector StartLocation = LegPoint->GetComponentLocation();
+		FVector EndLocation = StartLocation + GetActorUpVector() * -60.0f;
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+		FHitResult Hit;
+		DrawDebugLine(
+			GetWorld(),
+			StartLocation,
+			EndLocation,
+			FColor::Green
+		);
+
+		if (GetWorld()->LineTraceSingleByChannel(
+			Hit,
+			StartLocation,
+			EndLocation,
+			ECC_Visibility,
+			QueryParams
+		))
+		{
+			ToggleClimbing(false, nullptr);
+		}
+	}
+
 	// 라키투 카메라 기능 활용
 	if (LakituCameraComponent)
 	{
@@ -59,54 +103,103 @@ void AMario64Character::Move(const FInputActionValue& Value)
 	if (bIsJumping && bIsUTurn)
 		return;
 	FVector2D MovementVector = Value.Get<FVector2D>();
+	
 	if (Controller != nullptr)
 	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		FVector NewDirection = ForwardDirection * MovementVector.Y + RightDirection * MovementVector.X;
-		UpdateMovementDirection(NewDirection);
-		NewDirection.Z = 0.0f;
-		
-		float CurrentSpeed = GetCharacterMovement()->Velocity.Size2D(); // 수평 속도만 계산
-		
-		if (!NewDirection.IsNearlyZero())
+		if (bIsClimbing)
 		{
-			// 현재 캐릭터 방향과 새 이동 방향 사이의 각도 계산
-			float DotProduct = FVector::DotProduct(GetActorForwardVector(), NewDirection.GetSafeNormal());
-			
-			// U턴인 경우에만 회전 및 속도 조정 적용 (약 135도 이상 차이)
-			if (DotProduct <= -0.7f)
+			// 입력 임계값 증가 (0.2로 설정)
+			if (FMath::Abs(MovementVector.Y) < 0.2f)
 			{
-				float Angle = FMath::Atan2(NewDirection.Y, NewDirection.X);
-				Angle = FMath::RoundToFloat(Angle / (PI / 4.0f)) * (PI / 4.0f);
+				// 이동 입력이 없으면 속도 0으로 설정하고 즉시 반환
+				GetCharacterMovement()->Velocity = FVector::ZeroVector;
+				return;
+			}
+			bCameDownLadder = MovementVector.Y < 0.0f;
+			bClimbingHasInput = true;
 
-				// 새 회전 적용
-				FRotator NewRotator = FRotator(0.0f, FMath::RadiansToDegrees(Angle), 0.0f);
-				SetActorRotation(NewRotator);
+			FVector CurrentVelocity = GetCharacterMovement()->Velocity;
+			float TargetZSpeed = MovementVector.Y * 100.0f; 
+			
+			float NewZSpeed = FMath::FInterpTo(CurrentVelocity.Z, TargetZSpeed, GetWorld()->GetDeltaSeconds(), 5.0f);
+			
+			GetCharacterMovement()->Velocity = FVector(0.0f, 0.0f, NewZSpeed);
+
+			FVector StartLocation = LegPoint->GetComponentLocation();
+			FVector EndLocation = StartLocation + GetActorForwardVector() * 60.0f;
+			
+			FHitResult Hit;
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this);
+			
+			DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Blue, false, 0.1f);
+			
+			// 전방에 사다리가 있는지 확인
+			if (!GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Visibility, QueryParams))
+			{
+				// 대각선 방향 계산 (전방 + 상방, 75도 각도)
+				// 75도 = 전방 벡터 1.0에 대해 상방 벡터 약 3.73 (tan 75° ≈ 3.73)
+				FVector UpVector = FVector::UpVector;
+				FVector DiagonalDirection = GetActorForwardVector() + (UpVector * 3.73f);
+				DiagonalDirection.Normalize();
 				
-				// 속도 유지하며 방향 변경
-				if (CurrentSpeed > 0.0f && GetCharacterMovement()->IsMovingOnGround())
-				{
-					FVector NewDirectionNormalized = FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.0f);
-					FVector NewVelocity = NewDirectionNormalized * CurrentSpeed;
-					NewVelocity.Z = GetCharacterMovement()->Velocity.Z;
-					
-					GetCharacterMovement()->Velocity = NewVelocity;
-				}
+				FVector LaunchVelocity = DiagonalDirection * 850.0f; // 속도 조절
+				
+				LaunchCharacter(LaunchVelocity, true, true);
+				
+				DrawDebugLine(GetWorld(), StartLocation, StartLocation + LaunchVelocity * 0.1f, 
+					FColor::Red, false, 1.0f, 0, 3.0f);
 			}
 		}
-		
-		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+		else
+		{
+			// find out which way is forward
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+			// get forward vector
+			const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+			// get right vector 
+			const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+			FVector NewDirection = ForwardDirection * MovementVector.Y + RightDirection * MovementVector.X;
+			UpdateMovementDirection(NewDirection);
+			NewDirection.Z = 0.0f;
+
+			float CurrentSpeed = GetCharacterMovement()->Velocity.Size2D(); // 수평 속도만 계산
+
+			if (!NewDirection.IsNearlyZero())
+			{
+				// 현재 캐릭터 방향과 새 이동 방향 사이의 각도 계산
+				float DotProduct = FVector::DotProduct(GetActorForwardVector(), NewDirection.GetSafeNormal());
+
+				// U턴인 경우에만 회전 및 속도 조정 적용 (약 135도 이상 차이)
+				if (DotProduct <= -0.7f)
+				{
+					float Angle = FMath::Atan2(NewDirection.Y, NewDirection.X);
+					Angle = FMath::RoundToFloat(Angle / (PI / 4.0f)) * (PI / 4.0f);
+
+					// 새 회전 적용
+					FRotator NewRotator = FRotator(0.0f, FMath::RadiansToDegrees(Angle), 0.0f);
+					SetActorRotation(NewRotator);
+
+					// 속도 유지하며 방향 변경
+					if (CurrentSpeed > 0.0f && GetCharacterMovement()->IsMovingOnGround())
+					{
+						FVector NewDirectionNormalized = FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.0f);
+						FVector NewVelocity = NewDirectionNormalized * CurrentSpeed;
+						NewVelocity.Z = GetCharacterMovement()->Velocity.Z;
+
+						GetCharacterMovement()->Velocity = NewVelocity;
+					}
+				}
+			}
+
+			// add movement 
+			AddMovementInput(ForwardDirection, MovementVector.Y);
+			AddMovementInput(RightDirection, MovementVector.X);
+		}
 	}
 }
 
@@ -396,6 +489,45 @@ void AMario64Character::OnWallHit(UPrimitiveComponent* HitComponent, AActor* Oth
 
 void AMario64Character::OnObjectHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("OnObjectHit!!!!!!!!!!"));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("OnObjectHit!!!!!!!!!!"));
+}
+
+void AMario64Character::ToggleClimbing(bool ToSetState, ALadder* ToSetLadder)
+{
+	bIsClimbing = ToSetState;
+	CurrentLadderRef = ToSetLadder;
+	if (bIsClimbing)
+	{
+		if (CurrentLadderRef)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Climbing Started"));
+			
+			// 사다리의 Forward 방향 가져오기
+			FVector ForwardVector = CurrentLadderRef->GetActorForwardVector();
+			FRotator BaseRotation = ForwardVector.Rotation();
+			
+			// 캐릭터가 사다리를 정면으로 바라보도록 90도 회전
+			FRotator NewRotation = FRotator(0.0f, BaseRotation.Yaw - 90.0f, 0.0f);
+			
+			// 회전 적용
+			SetActorRotation(NewRotation);
+		}
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->MaxWalkSpeed = 50.0f;
+		GetCharacterMovement()->GravityScale = 0.0f;
+		
+		// 모든 속도를 0으로 초기화
+		GetCharacterMovement()->Velocity = FVector::ZeroVector;
+		GetCharacterMovement()->StopMovementImmediately();
+	}
+	else
+	{
+		bCameDownLadder = false;
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		GetCharacterMovement()->MaxWalkSpeed = 230.f;
+		GetCharacterMovement()->GravityScale = 2.0f;
+	}
 }
 

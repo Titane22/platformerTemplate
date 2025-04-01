@@ -44,7 +44,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Settings")
-	float DefaultDistance = 700.0f;
+	float DefaultDistance = 1500.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Settings")
 	float ClkoseDistance = 250.0f;

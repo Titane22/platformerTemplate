@@ -83,6 +83,7 @@ void ULakituCamera::InitializeCamera()
 		{
 			Camera = NewObject<UCameraComponent>(Owner, TEXT("Lakitu Camera"));
 			Camera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+			Camera->FieldOfView = 50.0f;
 			Camera->RegisterComponent();
 
 			Camera->bUsePawnControlRotation = true;

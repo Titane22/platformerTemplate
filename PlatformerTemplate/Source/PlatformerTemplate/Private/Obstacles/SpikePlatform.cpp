@@ -33,7 +33,7 @@ void ASpikePlatform::BeginPlay()
 		FOnTimelineEvent OnFinished;
 		OnFinished.BindUFunction(this, FName("OnTimelineFinished"));
 		SpikeTimeline->SetTimelineFinishedFunc(OnFinished);
-		SpikeTimeline->SetPlayRate(1.0f);
+		SpikeTimeline->SetPlayRate(2.0f);
 
 		SpikeTimeline->PlayFromStart();
 	}
@@ -84,7 +84,7 @@ void ASpikePlatform::OnTimelineFinished()
 	{
 		bIsRising = true;
 
-		SpikeTimeline->SetPlayRate(1.0f);
+		SpikeTimeline->SetPlayRate(2.0f);
 
 		FTimerHandle TimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(
