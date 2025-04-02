@@ -37,6 +37,8 @@ public:
 
 	void ToggleClimbing(bool ToSetState, ALadder* ToSetLadde);
 
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -66,6 +68,8 @@ protected:
 
 	void PerformWallJump();
 
+	void ResetLevel();
+
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
@@ -81,6 +85,17 @@ protected:
 
 	UFUNCTION()
 	void OnSideSomersaultMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Health")
+	void Die();
+	virtual void Die_Implementation();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Health")
+	void OnDamaged();
+	virtual void OnDamaged_Implementation();
+
+	UFUNCTION()
+	void EndInvulnerability();
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
@@ -147,4 +162,17 @@ protected:
 	UPROPERTY()
 	class ALadder* CurrentLadderRef;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float MaxHealth = 3.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float CurrentHealth = 3.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float InvulnerabilityTime = 2.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	bool bIsInvulnerable = false;
+
+	FTimerHandle InvulnerabilityTimerHandle;
 };

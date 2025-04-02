@@ -9,6 +9,8 @@
 #include "Enemy/PT_Enemy.h"
 #include "Obstacles/Ladder.h"
 #include "Component/LakituCamera.h"
+#include "Kismet/GameplayStatics.h"
+#include "../PlatformerTemplateGameMode.h"
 
 AMario64Character::AMario64Character()
 {
@@ -464,10 +466,82 @@ void AMario64Character::PerformWallJump()
 	SetActorRotation(FinalJumpDir.Rotation());
 }
 
+void AMario64Character::ResetLevel()
+{
+	// TODO: Check Current Death Count
+	// TODO: CheckPoint
+	if (APlatformerTemplateGameMode* GameMode = Cast<APlatformerTemplateGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	{
+		if (GameMode->LastCheckPoint)
+			GameMode->RespawnPlayer();
+		else
+			UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()), false);
+	}
+}
+
 void AMario64Character::OnSideSomersaultMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	bIsJumping = false;
 	bIsUTurn = false;
+}
+
+float AMario64Character::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (bIsInvulnerable)
+		return 0.0f;
+
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	CurrentHealth -= ActualDamage;
+
+	bIsInvulnerable = true;
+	GetWorldTimerManager().SetTimer(
+		InvulnerabilityTimerHandle,
+		this,
+		&AMario64Character::EndInvulnerability,
+		InvulnerabilityTime,
+		false
+	);
+
+	OnDamaged();
+
+	if (CurrentHealth <= 0.0f)
+	{
+		Die();
+	}
+
+	return ActualDamage;
+}
+
+void AMario64Character::Die_Implementation()
+{
+	GetCharacterMovement()->StopMovementImmediately();
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PC);
+	}
+
+	FTimerHandle DieTimerHandle;
+	GetWorldTimerManager().SetTimer(
+		DieTimerHandle,
+		this,
+		&AMario64Character::ResetLevel,
+		2.0f,
+		false
+	);
+}
+
+void AMario64Character::OnDamaged_Implementation()
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->AddImpulse(FVector(0, 0, 400.0f), true);
+	}
+}
+
+void AMario64Character::EndInvulnerability()
+{
+	bIsInvulnerable = false;
 }
 
 void AMario64Character::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
