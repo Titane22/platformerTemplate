@@ -7,6 +7,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Enemy/PT_Enemy.h"
+#include "Obstacles/ClearKey.h"
 #include "Obstacles/Ladder.h"
 #include "Component/LakituCamera.h"
 #include "Kismet/GameplayStatics.h"
@@ -453,7 +454,7 @@ void AMario64Character::PerformWallJump()
 		HorizontalDir.Normalize();
 	}
 
-	// 3. 수직 방향 추가 (약 45도 위쪽으로)
+	// 3. 수직 방향 추가 
 	FVector FinalJumpDir = HorizontalDir + FVector(0, 0, 1.0f);
 	FinalJumpDir.Normalize();
 
@@ -461,21 +462,50 @@ void AMario64Character::PerformWallJump()
 	float WallJumpForce = 1700.0f; 
 	LaunchCharacter(FinalJumpDir * WallJumpForce, true, true);
 
-	// 5. 방향 설정 (선택적)
-	// 점프 방향으로 캐릭터 회전
+	// 5. 점프 방향으로 캐릭터 회전
 	SetActorRotation(FinalJumpDir.Rotation());
 }
 
 void AMario64Character::ResetLevel()
 {
 	// TODO: Check Current Death Count
-	// TODO: CheckPoint
-	if (APlatformerTemplateGameMode* GameMode = Cast<APlatformerTemplateGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+	UWorld* CurrentWorld = GetWorld();
+	if (!CurrentWorld)
 	{
+		UE_LOG(LogTemp, Error, TEXT("ResetLevel: World is null!"));
+		return;
+	}
+	
+	// 게임모드 안전하게 가져오기
+	if (APlatformerTemplateGameMode* GameMode = Cast<APlatformerTemplateGameMode>(UGameplayStatics::GetGameMode(CurrentWorld)))
+	{
+		// 체크포인트가 있으면 RespawnPlayer 사용
 		if (GameMode->LastCheckPoint)
+		{
 			GameMode->RespawnPlayer();
+		}
 		else
-			UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()), false);
+		{
+			FString CurrentLevelName = CurrentWorld->GetName();
+			if (!CurrentLevelName.IsEmpty())
+			{
+				if (APlayerController* PC = Cast<APlayerController>(GetController()))
+				{
+					DisableInput(PC);
+					PC->UnPossess();
+				}
+				
+				UGameplayStatics::OpenLevel(CurrentWorld, FName(*CurrentLevelName), false);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("AMario64Character::ResetLevel: Cannot get level name!"));
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("AMario64Character::ResetLevel: GameMode is null!"));
 	}
 }
 
@@ -487,7 +517,7 @@ void AMario64Character::OnSideSomersaultMontageEnded(UAnimMontage* Montage, bool
 
 float AMario64Character::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (bIsInvulnerable)
+	if (bIsInvulnerable || bIsDying)
 		return 0.0f;
 
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -514,6 +544,12 @@ float AMario64Character::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 
 void AMario64Character::Die_Implementation()
 {
+	if (ClearKeyRef)
+	{
+		ClearKeyRef->ResetKey();
+		ClearKeyRef = nullptr;
+	}
+
 	GetCharacterMovement()->StopMovementImmediately();
 
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
@@ -521,6 +557,8 @@ void AMario64Character::Die_Implementation()
 		DisableInput(PC);
 	}
 
+	bIsDying = true;
+	
 	FTimerHandle DieTimerHandle;
 	GetWorldTimerManager().SetTimer(
 		DieTimerHandle,
@@ -603,5 +641,10 @@ void AMario64Character::ToggleClimbing(bool ToSetState, ALadder* ToSetLadder)
 		GetCharacterMovement()->MaxWalkSpeed = 230.f;
 		GetCharacterMovement()->GravityScale = 2.0f;
 	}
+}
+
+void AMario64Character::SetClearKey(AClearKey* ToSetKey)
+{
+	ClearKeyRef = ToSetKey;
 }
 

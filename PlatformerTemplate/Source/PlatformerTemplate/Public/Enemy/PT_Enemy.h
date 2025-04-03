@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class PLATFORMERTEMPLATE_API APT_Enemy : public APlatformerTemplateCharacter
+class PLATFORMERTEMPLATE_API APT_Enemy : public APawn
 {
 	GENERATED_BODY()
 	

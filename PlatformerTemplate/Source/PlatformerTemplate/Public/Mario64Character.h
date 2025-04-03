@@ -8,6 +8,7 @@
 
 class ULakituCamera;
 class ALadder;
+class AClearKey;
 
 UENUM(BlueprintType)
 enum class EJumpState : uint8
@@ -36,6 +37,10 @@ public:
 	void ResetCameraSystem() { bNeedCameraReset = true; }
 
 	void ToggleClimbing(bool ToSetState, ALadder* ToSetLadde);
+
+	void SetClearKey(AClearKey* ToSetKey);
+
+	AClearKey* GetClearKey() const { return ClearKeyRef; }
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
@@ -171,8 +176,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
 	float InvulnerabilityTime = 2.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	bool bIsInvulnerable = false;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Health")
+	bool bIsDying = false;
+
+	bool bHasKey = false;
+
+	UPROPERTY()
+	AClearKey* ClearKeyRef = nullptr;
+
 	FTimerHandle InvulnerabilityTimerHandle;
+	
+	void ClearKeyReference() { ClearKeyRef = nullptr; }
+	
 };
