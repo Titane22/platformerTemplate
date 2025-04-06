@@ -17,11 +17,13 @@ AMario64Character::AMario64Character()
 {
 	LakituCameraComponent = CreateDefaultSubobject<ULakituCamera>(TEXT("Lakitu"));
 
+	LegPoint = CreateDefaultSubobject<USceneComponent>(TEXT("Leg Point"));
+	LegPoint->SetupAttachment(RootComponent);
 	JumpMaxHoldTime = 0.3f;
 
 	GetCharacterMovement()->MaxWalkSpeed = 230.f;
 	GetCharacterMovement()->GravityScale = 2.0f;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 720.0f); 
+	GetCharacterMovement()->RotationRate = FRotator(720.0f, 0.0f, 0.0f);
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AMario64Character::OnHit);
 }
 
@@ -52,7 +54,7 @@ void AMario64Character::Tick(float DeltaSeconds)
 		JumpState = EJumpState::Single;
 	}
 
-	if (bIsClimbing)
+	if (CurrentState == EActionState::Climbing)
 	{
 		// 올라가는 속도가 있는지 확인
 		float VerticalSpeed = GetCharacterMovement()->Velocity.Z;
@@ -68,7 +70,7 @@ void AMario64Character::Tick(float DeltaSeconds)
 		bClimbingHasInput = false;
 	}
 
-	if (bIsClimbing && bCameDownLadder)
+	if (CurrentState == EActionState::Climbing && bCameDownLadder)
 	{
 		FVector StartLocation = LegPoint->GetComponentLocation();
 		FVector EndLocation = StartLocation + GetActorUpVector() * -60.0f;
@@ -103,13 +105,13 @@ void AMario64Character::Tick(float DeltaSeconds)
 
 void AMario64Character::Move(const FInputActionValue& Value)
 {
-	if (bIsJumping && bIsUTurn)
+	if (CurrentState == EActionState::Burrowed || bIsUTurn)
 		return;
 	FVector2D MovementVector = Value.Get<FVector2D>();
 	
 	if (Controller != nullptr)
 	{
-		if (bIsClimbing)
+		if (CurrentState == EActionState::Climbing)
 		{
 			// 입력 임계값 증가 (0.2로 설정)
 			if (FMath::Abs(MovementVector.Y) < 0.2f)
@@ -218,8 +220,9 @@ void AMario64Character::Look(const FInputActionValue& Value)
 void AMario64Character::Jump()
 {
 	// TODO: Check if Max Speed
-	if (bIsCrouching && bWasRunning)
+	if (CurrentState == EActionState::Crouching && bWasRunning)
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CurrentState == EActionState::Crouching && bWasRunning"));
 		if (GetWorld()->GetTimeSeconds() - CurrentCrouchTime <= LongJumpIdelTime)
 		{
 			return PerformLongJump();
@@ -227,7 +230,7 @@ void AMario64Character::Jump()
 	}
 
 	// 공중에 있거나 이미 점프 중인 경우
-	if (GetCharacterMovement()->IsFalling() || bIsJumping)
+	if (GetCharacterMovement()->IsFalling() || CurrentState == EActionState::Flying)
 	{
 		// 벽 점프가 가능하고 허용 시간 내에 있는 경우
 		if (GetWorld()->GetTimeSeconds() - CurrentWallHitTime <= WallJumpIdleTime)
@@ -247,20 +250,20 @@ void AMario64Character::Jump()
 	switch (JumpState)
 	{
 	case EJumpState::Single:
-		GetCharacterMovement()->JumpZVelocity = 500.0f;
-		GetCharacterMovement()->GravityScale = 2.0f;
+		GetCharacterMovement()->JumpZVelocity = 400.0f;
+		GetCharacterMovement()->GravityScale = IdleGravityScale;
 		JumpState = EJumpState::Double;
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, TEXT("Single"));
 		break;
 	case EJumpState::Double:
-		GetCharacterMovement()->JumpZVelocity = 700.0f;
-		GetCharacterMovement()->GravityScale = 2.2f;
+		GetCharacterMovement()->JumpZVelocity = 600.0f;
+		GetCharacterMovement()->GravityScale = DoubleJumpGravityScale;
 		JumpState = EJumpState::Triple;
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Double"));
 		break;
 	case EJumpState::Triple:
-		GetCharacterMovement()->JumpZVelocity = 980.0f;
-		GetCharacterMovement()->GravityScale = 2.4f;
+		GetCharacterMovement()->JumpZVelocity = 780.0f;
+		GetCharacterMovement()->GravityScale = TripleJumpGravityScale;
 		JumpState = EJumpState::Single;
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Triple"));
 		break;
@@ -277,7 +280,7 @@ void AMario64Character::Jump()
 				OnMontageEnded.BindUObject(this, &AMario64Character::OnSideSomersaultMontageEnded);
 				AnimInst->Montage_SetEndDelegate(OnMontageEnded);
 
-				bIsJumping = true;
+				CurrentState = EActionState::Flying;
 				return;
 			}
 		}
@@ -287,6 +290,7 @@ void AMario64Character::Jump()
 		}
 	}
 	bIsJumping = true;
+	CurrentState = EActionState::Flying;
 	Super::Jump();
 }
 
@@ -296,14 +300,14 @@ void AMario64Character::PerformLongJump()
 	Super::UnCrouch();
 
 	GetCharacterMovement()->JumpZVelocity = 700.0f;
-	GetCharacterMovement()->GravityScale = 2.4f;
+	GetCharacterMovement()->GravityScale = TripleJumpGravityScale;
 
 	FVector ForwardDirection = GetActorForwardVector() * 1800.0f;
 	ForwardDirection.Z = 1250.0f;
 
 	LaunchCharacter(ForwardDirection, true, true);
 
-	bIsCrouching = false;
+	SetState(EActionState::Flying);
 	bWasRunning = false;
 	return;
 }
@@ -327,8 +331,17 @@ void AMario64Character::Landed(const FHitResult& Hit)
 		Super::Landed(Hit);
 
 		CurrentJumpTime = GetWorld()->GetTimeSeconds();
+		CurrentState = EActionState::Idle;
 		bCanWallJump = false;
 		CurrentWallHitTime = 0.0f;
+		if (bIsSprinting)
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+		}
+		else
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 230.0f;
+		}
 	}
 }
 
@@ -356,7 +369,8 @@ void AMario64Character::UpdateMovementDirection(FVector NewDirection)
 		CurrentDirection = NewDirection;
 	}
 
-	CheckForTurn();
+	if(bUseU_Turn)
+		CheckForTurn();
 }
 
 void AMario64Character::CheckForTurn()
@@ -387,25 +401,22 @@ void AMario64Character::Crouch(const FInputActionValue& Value)
 	if (bWantToCrouching)
 	{
 		bWasRunning = bIsSprinting;
-		bIsCrouching = true;
-		CurrentCrouchTime = GetWorld()->GetTimeSeconds();
-
-		Super::Crouch();
+		SetState(EActionState::Crouching);
 
 		if (bWasRunning)
 		{
-			GetCharacterMovement()->MaxWalkSpeed = 350.0f;
+			//SetState(EActionState::Sliding);
 			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Crouch::bWasRunning"));
 			// TODO: 슬라이딩 커브
 		}
 		else
 		{
-			GetCharacterMovement()->MaxWalkSpeed = 150.0f;
+			Super::Crouch();
 		}
 	}
 	else
 	{
-		bIsCrouching = false;
+		CurrentState = EActionState::Idle;
 		bWasRunning = false;
 		GetCharacterMovement()->MaxWalkSpeed = 230.f;
 		Super::UnCrouch();
@@ -461,6 +472,7 @@ void AMario64Character::PerformWallJump()
 	// 4. 벽 점프 힘 적용
 	float WallJumpForce = 1700.0f; 
 	LaunchCharacter(FinalJumpDir * WallJumpForce, true, true);
+	CurrentState = EActionState::Flying;
 
 	// 5. 점프 방향으로 캐릭터 회전
 	SetActorRotation(FinalJumpDir.Rotation());
@@ -486,6 +498,7 @@ void AMario64Character::ResetLevel()
 		}
 		else
 		{
+			// TODO: Crash
 			FString CurrentLevelName = CurrentWorld->GetName();
 			if (!CurrentLevelName.IsEmpty())
 			{
@@ -509,15 +522,61 @@ void AMario64Character::ResetLevel()
 	}
 }
 
+void AMario64Character::SetState(const EActionState NewState)
+{
+	if (CurrentState == NewState)
+		return;
+
+	EActionState PrevState = CurrentState;
+	CurrentState = NewState;
+
+	switch (CurrentState)
+	{
+	case EActionState::Sliding:
+		GetCharacterMovement()->MaxWalkSpeed = 350.0f;
+		break;
+	case EActionState::Flying:
+		break;
+	case EActionState::Crouching:
+		CurrentCrouchTime = GetWorld()->GetTimeSeconds();
+		GetCharacterMovement()->MaxWalkSpeed = 150.0f;
+		break;
+	case EActionState::Climbing:
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->GravityScale = DisableGravityScale;
+		GetCharacterMovement()->MaxWalkSpeed = 50.0f;
+		GetCharacterMovement()->Velocity = FVector::ZeroVector;
+		GetCharacterMovement()->StopMovementImmediately();
+		break;
+	case EActionState::Die:
+		GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->GravityScale = DisableGravityScale;
+		if (APlayerController* PC = Cast<APlayerController>(GetController()))
+		{
+			DisableInput(PC);
+		}
+		break;
+	case EActionState::Burrowed:
+		break;
+	case EActionState::Idle:
+	default:
+		GetCharacterMovement()->GravityScale = IdleGravityScale;
+		GetCharacterMovement()->MaxWalkSpeed = 230.f;
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("bIsMovementDisabled is false"));
+		break;
+	}
+}
+
 void AMario64Character::OnSideSomersaultMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	bIsJumping = false;
 	bIsUTurn = false;
+	CurrentState = EActionState::Idle;
 }
 
 float AMario64Character::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (bIsInvulnerable || bIsDying)
+	if (bIsInvulnerable || CurrentState == EActionState::Die)
 		return 0.0f;
 
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -550,15 +609,8 @@ void AMario64Character::Die_Implementation()
 		ClearKeyRef = nullptr;
 	}
 
-	GetCharacterMovement()->StopMovementImmediately();
+	SetState(EActionState::Die);
 
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		DisableInput(PC);
-	}
-
-	bIsDying = true;
-	
 	FTimerHandle DieTimerHandle;
 	GetWorldTimerManager().SetTimer(
 		DieTimerHandle,
@@ -608,12 +660,10 @@ void AMario64Character::ToggleClimbing(bool ToSetState, ALadder* ToSetLadder)
 {
 	bIsClimbing = ToSetState;
 	CurrentLadderRef = ToSetLadder;
-	if (bIsClimbing)
+	if (ToSetState)
 	{
 		if (CurrentLadderRef)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Climbing Started"));
-			
 			// 사다리의 Forward 방향 가져오기
 			FVector ForwardVector = CurrentLadderRef->GetActorForwardVector();
 			FRotator BaseRotation = ForwardVector.Rotation();
@@ -624,22 +674,15 @@ void AMario64Character::ToggleClimbing(bool ToSetState, ALadder* ToSetLadder)
 			// 회전 적용
 			SetActorRotation(NewRotation);
 		}
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-		GetCharacterMovement()->bOrientRotationToMovement = false;
-		GetCharacterMovement()->MaxWalkSpeed = 50.0f;
-		GetCharacterMovement()->GravityScale = 0.0f;
 		
-		// 모든 속도를 0으로 초기화
-		GetCharacterMovement()->Velocity = FVector::ZeroVector;
-		GetCharacterMovement()->StopMovementImmediately();
+		SetState(EActionState::Climbing);
 	}
 	else
 	{
+		SetState(EActionState::Idle);
 		bCameDownLadder = false;
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 		GetCharacterMovement()->bOrientRotationToMovement = true;
-		GetCharacterMovement()->MaxWalkSpeed = 230.f;
-		GetCharacterMovement()->GravityScale = 2.0f;
 	}
 }
 

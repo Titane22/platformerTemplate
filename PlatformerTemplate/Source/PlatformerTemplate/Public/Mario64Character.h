@@ -18,6 +18,20 @@ enum class EJumpState : uint8
 	Triple	UMETA(DisplayName = "Triple")
 };
 
+UENUM(BlueprintType)
+enum class EActionState : uint8
+{
+	Idle		UMETA(DisplayName = "Idle"),
+	Flying		UMETA(DisplayName = "Flying"),
+	Crouching	UMETA(DisplayName = "Crouching"),
+	Climbing	UMETA(DisplayName = "Climbing"),
+	Sliding		UMETA(DisplayName = "Sliding"),
+	Die			UMETA(DisplayName = "Die"),
+
+	/// For Potato Character
+	Burrowed	UMETA(DisplayName = "Burrowed")
+};
+
 UCLASS()
 class PLATFORMERTEMPLATE_API AMario64Character : public APlatformerTemplateCharacter
 {
@@ -75,6 +89,8 @@ protected:
 
 	void ResetLevel();
 
+	void SetState(const EActionState State);
+
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
@@ -102,7 +118,11 @@ protected:
 	UFUNCTION()
 	void EndInvulnerability();
 
+	void ClearKeyReference() { ClearKeyRef = nullptr; }
+
 protected:
+	EActionState CurrentState = EActionState::Idle;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	ULakituCamera* LakituCameraComponent;
 
@@ -130,6 +150,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
 	float LongJumpIdelTime = 0.1f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
 	float CurrentJumpTime = 0.0f;
 
 	float CurrentMoveTime = 0.0f;
@@ -144,9 +165,10 @@ protected:
 
 	bool bIsSprinting = false;
 
-	bool bIsCrouching = false;
-	
 	bool bIsUTurn = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
+	bool bUseU_Turn = true;
 
 	bool bIsJumping = false;
 
@@ -179,9 +201,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	bool bIsInvulnerable = false;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Health")
-	bool bIsDying = false;
-
 	bool bHasKey = false;
 
 	UPROPERTY()
@@ -189,6 +208,15 @@ protected:
 
 	FTimerHandle InvulnerabilityTimerHandle;
 	
-	void ClearKeyReference() { ClearKeyRef = nullptr; }
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
+	float IdleGravityScale = 3.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
+	float DoubleJumpGravityScale = 3.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
+	float TripleJumpGravityScale = 3.4f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
+	float DisableGravityScale = 0.0f;
 };
