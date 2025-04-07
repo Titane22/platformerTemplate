@@ -32,7 +32,7 @@ enum class EActionState : uint8
 	Burrowed	UMETA(DisplayName = "Burrowed")
 };
 
-UCLASS()
+UCLASS(config = Game, BlueprintType, hideCategories = (Navigation))
 class PLATFORMERTEMPLATE_API AMario64Character : public APlatformerTemplateCharacter
 {
 	GENERATED_BODY()
@@ -58,6 +58,8 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
+	virtual void Jump() override;
+
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -66,8 +68,6 @@ protected:
 	virtual void Move(const FInputActionValue& Value);
 
 	virtual void Look(const FInputActionValue& Value);
-
-	virtual void Jump() override;
 
 	void PerformLongJump();
 
@@ -90,6 +90,8 @@ protected:
 	void ResetLevel();
 
 	void SetState(const EActionState State);
+
+	void TagCharacter();
 
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
@@ -122,6 +124,9 @@ protected:
 
 protected:
 	EActionState CurrentState = EActionState::Idle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
+	UInputAction* TagAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	ULakituCamera* LakituCameraComponent;

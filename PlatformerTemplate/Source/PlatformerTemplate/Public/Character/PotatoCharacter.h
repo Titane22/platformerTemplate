@@ -13,7 +13,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(config=Game, BlueprintType, hideCategories=(Navigation))
 class PLATFORMERTEMPLATE_API APotatoCharacter : public AMario64Character
 {
 	GENERATED_BODY()

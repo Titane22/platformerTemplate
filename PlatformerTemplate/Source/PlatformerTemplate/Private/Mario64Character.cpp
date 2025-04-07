@@ -6,11 +6,14 @@
 #include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Character/FoxCharacter.h"
+#include "Character/PotatoCharacter.h"
 #include "Enemy/PT_Enemy.h"
 #include "Obstacles/ClearKey.h"
 #include "Obstacles/Ladder.h"
 #include "Component/LakituCamera.h"
 #include "Kismet/GameplayStatics.h"
+#include "AI/AIC_PlayerBase.h"
 #include "../PlatformerTemplateGameMode.h"
 
 AMario64Character::AMario64Character()
@@ -25,6 +28,9 @@ AMario64Character::AMario64Character()
 	GetCharacterMovement()->GravityScale = 2.0f;
 	GetCharacterMovement()->RotationRate = FRotator(720.0f, 0.0f, 0.0f);
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AMario64Character::OnHit);
+
+	AIControllerClass = AAIC_PlayerBase::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 void AMario64Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -36,6 +42,7 @@ void AMario64Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMario64Character::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMario64Character::Look);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AMario64Character::Crouch);
+		EnhancedInputComponent->BindAction(TagAction, ETriggerEvent::Triggered, this, &AMario64Character::TagCharacter);
 	}
 	else
 	{
@@ -565,6 +572,46 @@ void AMario64Character::SetState(const EActionState NewState)
 		GetCharacterMovement()->MaxWalkSpeed = 230.f;
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("bIsMovementDisabled is false"));
 		break;
+	}
+}
+
+void AMario64Character::TagCharacter()
+{
+	APlatformerTemplateGameMode* GameMode = Cast<APlatformerTemplateGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	if (!GameMode) 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TagCharacter() !GameMode"));
+		return;
+	}
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (!PC)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TagCharacter() !PC"));
+		return;
+	}
+
+	APotatoCharacter* Potato = GameMode->Potato;
+	AFoxCharacter* Fox = GameMode->Fox;
+	if (!Potato || !Fox)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TagCharacter() !Potato || !Fox"));
+		return;
+	}
+
+	// TODO: Apply Easing Curve
+	AMario64Character* CurrentChar = Cast<AMario64Character>(PC->GetPawn());
+	if (CurrentChar == Potato)
+	{
+		PC->Possess(Fox);
+
+		Potato->SpawnDefaultController();
+	}
+	else
+	{
+		PC->Possess(Potato);
+
+		Fox->SpawnDefaultController();
 	}
 }
 

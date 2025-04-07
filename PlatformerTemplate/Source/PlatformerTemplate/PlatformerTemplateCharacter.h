@@ -27,6 +27,8 @@ class APlatformerTemplateCharacter : public ACharacter
 public:
 	APlatformerTemplateCharacter();
 
+	const UInputMappingContext* GetDefaultMappingContext() { return DefaultMappingContext; }
+
 protected:
 
 	/** Jump Input Action */
