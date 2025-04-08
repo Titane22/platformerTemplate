@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AI/PlayerInterface.h"
 #include "Mario64Character.h"
 #include "FoxCharacter.generated.h"
 
@@ -16,8 +17,10 @@ class PLATFORMERTEMPLATE_API AFoxCharacter : public AMario64Character
 
 public:
 	AFoxCharacter();
-
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+
+
+protected:
+
 };

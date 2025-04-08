@@ -28,8 +28,10 @@ protected:
 
 	virtual void Tick(float DeltaTime) override;
 
+	// Check if Plat Ground
 	bool CheckPlatGround();
 
+	// Call Burrow for Input Action
 	void ToogleBurrow(const FInputActionValue& Value);
 
 	void Burrow();
@@ -86,4 +88,5 @@ protected:
 	bool bWasBurrowed = false;
 
 	bool bIsBurrowed = false;
+
 };

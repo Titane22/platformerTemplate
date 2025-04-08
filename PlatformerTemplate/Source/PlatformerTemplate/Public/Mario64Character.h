@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "../PlatformerTemplateCharacter.h"
+#include "AI/PlayerInterface.h"
 #include "Mario64Character.generated.h"
 
 class ULakituCamera;
@@ -33,7 +34,7 @@ enum class EActionState : uint8
 };
 
 UCLASS(config = Game, BlueprintType, hideCategories = (Navigation))
-class PLATFORMERTEMPLATE_API AMario64Character : public APlatformerTemplateCharacter
+class PLATFORMERTEMPLATE_API AMario64Character : public APlatformerTemplateCharacter, public IPlayerInterface
 {
 	GENERATED_BODY()
 	
@@ -45,6 +46,9 @@ class PLATFORMERTEMPLATE_API AMario64Character : public APlatformerTemplateChara
 
 public:
 	AMario64Character();
+
+	UFUNCTION(BlueprintCallable, Category = "Interface")
+	virtual void JumpToDestination(FVector Destination);
 
 	/** 카메라 시스템을 강제로 리셋 */
 	UFUNCTION(BlueprintCallable, Category = "Camera")
@@ -60,6 +64,11 @@ public:
 
 	virtual void Jump() override;
 
+	void SetPartner(AMario64Character* ToSetPartner);
+
+	void MovementSwitchOnOff();
+	
+	bool IsStopFromPartner() { return bIsStopFromPartner; }
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -121,6 +130,8 @@ protected:
 	void EndInvulnerability();
 
 	void ClearKeyReference() { ClearKeyRef = nullptr; }
+
+	void CallStop();
 
 protected:
 	EActionState CurrentState = EActionState::Idle;
@@ -224,4 +235,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
 	float DisableGravityScale = 0.0f;
+
+	bool bIsStopFromPartner = false;
+
+	AMario64Character* PartnerRef;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* StopCommandAction;
 };

@@ -6,6 +6,8 @@
 #include "EnhancedActionKeyMapping.h"
 #include "EnhancedInputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 APotatoCharacter::APotatoCharacter()
 	:Super()

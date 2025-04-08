@@ -2,6 +2,8 @@
 
 
 #include "Character/FoxCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 AFoxCharacter::AFoxCharacter()
 	:Super()

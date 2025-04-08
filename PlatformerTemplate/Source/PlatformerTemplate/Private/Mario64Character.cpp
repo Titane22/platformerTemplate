@@ -24,6 +24,9 @@ AMario64Character::AMario64Character()
 	LegPoint->SetupAttachment(RootComponent);
 	JumpMaxHoldTime = 0.3f;
 
+	/// 캐릭터 AI 이동 속도 조절
+	GetCharacterMovement()->bRequestedMoveUseAcceleration = true;
+	///
 	GetCharacterMovement()->MaxWalkSpeed = 230.f;
 	GetCharacterMovement()->GravityScale = 2.0f;
 	GetCharacterMovement()->RotationRate = FRotator(720.0f, 0.0f, 0.0f);
@@ -32,6 +35,7 @@ AMario64Character::AMario64Character()
 	AIControllerClass = AAIC_PlayerBase::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
+
 
 void AMario64Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -43,6 +47,7 @@ void AMario64Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMario64Character::Look);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AMario64Character::Crouch);
 		EnhancedInputComponent->BindAction(TagAction, ETriggerEvent::Triggered, this, &AMario64Character::TagCharacter);
+		EnhancedInputComponent->BindAction(StopCommandAction, ETriggerEvent::Triggered, this, &AMario64Character::CallStop);
 	}
 	else
 	{
@@ -299,6 +304,16 @@ void AMario64Character::Jump()
 	bIsJumping = true;
 	CurrentState = EActionState::Flying;
 	Super::Jump();
+}
+
+void AMario64Character::SetPartner(AMario64Character* ToSetPartner)
+{
+	PartnerRef = ToSetPartner;
+}
+
+void AMario64Character::MovementSwitchOnOff()
+{
+	bIsStopFromPartner = !bIsStopFromPartner;
 }
 
 void AMario64Character::PerformLongJump()
@@ -681,6 +696,18 @@ void AMario64Character::EndInvulnerability()
 	bIsInvulnerable = false;
 }
 
+void AMario64Character::CallStop()
+{
+	if (!PartnerRef)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("APotatoCharacter::CallStop() PartnerRef is Null"));
+		UE_LOG(LogTemp, Warning, TEXT("APotatoCharacter::CallStop() PartnerRef is Null"));
+		return;
+	}
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("멈춰!"));
+	PartnerRef->MovementSwitchOnOff();
+}
+
 void AMario64Character::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (IsWall(OtherComp, Hit))
@@ -738,3 +765,48 @@ void AMario64Character::SetClearKey(AClearKey* ToSetKey)
 	ClearKeyRef = ToSetKey;
 }
 
+void AMario64Character::JumpToDestination(FVector Destination)
+{
+	// 시작점과 목적지 사이의 방향 벡터 계산
+	FVector Direction = Destination - GetActorLocation();
+	Direction.Z = 0; // 수평 방향만 고려
+	Direction.Normalize();
+	
+	// 목적지까지의 수평 거리 계산
+	float HorizontalDistance = FVector::Dist2D(GetActorLocation(), Destination);
+	
+	// 수직 높이 차이 계산
+	float HeightDifference = Destination.Z - GetActorLocation().Z;
+	
+	// 발사 속도 계산
+	FVector LaunchVelocity;
+	
+	DrawDebugSphere(GetWorld(), Destination, 20.0f, 8, FColor::Blue, false, 2.0f);
+	
+	bool bHasValidSolution = UGameplayStatics::SuggestProjectileVelocity_CustomArc(
+		this,                           // WorldContextObject
+		LaunchVelocity,                 // 결과 속도 (출력)
+		GetActorLocation(),             // 시작 위치
+		Destination             // 조정된 목표 위치
+	);
+	
+	// 계산 결과를 확인하기 위한 디버그 출력
+	UE_LOG(LogTemp, Warning, TEXT("Jump Calculation: bHasValidSolution=%s, Velocity=%s"),
+		   bHasValidSolution ? TEXT("True") : TEXT("False"),
+		   *LaunchVelocity.ToString());
+	
+	if (bHasValidSolution)
+	{
+		SetActorRotation(Direction.Rotation());
+		// 캐릭터 발사
+		LaunchCharacter(LaunchVelocity * 2, true, true);
+		
+		// 디버그 시각화
+		DrawDebugLine(GetWorld(), GetActorLocation(), Destination, FColor::Green, false, 2.0f, 0, 2.0f);
+		
+		// 발사 방향 표시
+		DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(),
+								 GetActorLocation() + LaunchVelocity.GetSafeNormal() * 200.0f,
+								 50.0f, FColor::Yellow, false, 2.0f);
+	}
+}

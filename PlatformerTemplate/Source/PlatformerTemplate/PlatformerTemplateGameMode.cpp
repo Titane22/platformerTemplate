@@ -40,6 +40,9 @@ void APlatformerTemplateGameMode::SpawnCharacter(FVector SpawnLocation)
 		SpawnRotation
 	);
 
+	Potato->SetPartner(Fox);
+	Fox->SetPartner(Potato);
+
 	if (Potato)
 	{
 		if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
