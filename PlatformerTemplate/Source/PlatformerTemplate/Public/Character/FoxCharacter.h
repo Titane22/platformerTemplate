@@ -20,7 +20,19 @@ public:
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
+	void Throw();
+	void HoldActor();
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USceneComponent* PickingPoint;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ThrowAction;
+
+	bool bIsTakingPotato = false;
+
+	bool bIsHoldingActor = false;
+
+	UPROPERTY()
+	AActor* HeldActor;
 };
