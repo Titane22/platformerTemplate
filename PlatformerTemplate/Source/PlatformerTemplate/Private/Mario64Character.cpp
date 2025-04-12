@@ -346,7 +346,7 @@ void AMario64Character::Landed(const FHitResult& Hit)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Destroy"));
 		LaunchCharacter(FVector(0.0f, 0.0f, 1000.0f), true, true);
-		Enemy->Destroy();
+		Enemy->Die();
 	}
 	else
 	{

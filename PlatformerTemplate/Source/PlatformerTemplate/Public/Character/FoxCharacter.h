@@ -21,7 +21,15 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void Throw();
+	
 	void HoldActor();
+
+	void ThrowHeldActor();
+
+	UFUNCTION()
+	void OnThrownCharacterHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
+							UPrimitiveComponent* OtherComp, FVector NormalImpulse, 
+							const FHitResult& Hit);
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	USceneComponent* PickingPoint;
@@ -35,4 +43,10 @@ protected:
 
 	UPROPERTY()
 	AActor* HeldActor;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
+	float ThrowForce = 3000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
+	float ThrowUpwardForce = 300.0f;
 };
