@@ -12,6 +12,7 @@ APT_Enemy::APT_Enemy()
 	// 이 액터가 Tick()을 매 프레임마다 호출하도록 설정
 	PrimaryActorTick.bCanEverTick = true;
 
+	GetCharacterMovement()->bRequestedMoveUseAcceleration = true;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 600.0f, 0.0f);
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
@@ -63,41 +64,28 @@ void APT_Enemy::Die_Implementation()
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance)
 		{
-			// 디버그 정보 출력
-			UE_LOG(LogTemp, Warning, TEXT("Playing death montage: %s, Duration: %f"), 
-				*DieMontage->GetName(), DieMontage->GetPlayLength());
-			
-			// 기존 바인딩된 콜백이 있다면 제거
 			AnimInstance->OnMontageEnded.RemoveDynamic(this, &APT_Enemy::OnDieMontageEnded);
-			
-			// 새로 콜백 바인딩
 			AnimInstance->OnMontageEnded.AddDynamic(this, &APT_Enemy::OnDieMontageEnded);
 			
-			// 몽타주 재생 - 명시적 재생 속도 (1.0) 지정
 			float PlayRate = 1.0f;
 			AnimInstance->Montage_Play(DieMontage, PlayRate);
 			
-			// 몽타주가 실행 중인지 확인
 			if (!AnimInstance->IsAnyMontagePlaying())
 			{
-				// 몽타주가 재생되지 않으면 바로 파괴
 				UE_LOG(LogTemp, Error, TEXT("Failed to play death montage!"));
 				Destroy();
 			}
 			else
 			{
-				// 몽타주가 제대로 재생되었다면 몽타주 끝날 때 파괴되도록 함
 				UE_LOG(LogTemp, Warning, TEXT("Death montage playing successfully"));
 				
-				// 몽타주가 멈춰있는 경우를 대비한 안전장치
-				// 몽타주 길이보다 약간 더 긴 시간 후에 자동으로 파괴
 				float MontageLength = DieMontage->GetPlayLength();
 				FTimerHandle DestroyTimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(
 					DestroyTimerHandle,
 					this,
 					&APT_Enemy::ForceDestroy,
-					MontageLength + 0.5f, // 0.5초 더 여유를 둠
+					MontageLength + 0.5f, 
 					false
 				);
 			}

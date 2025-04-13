@@ -25,21 +25,22 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, Category = "AI")
-    UBehaviorTree* BehaviorTree;
-    
-    UPROPERTY()
-    UBehaviorTreeComponent* BehaviorTreeComponent;
-    
-    UPROPERTY()
-    UBlackboardComponent* BlackboardComponent;
-
 	UFUNCTION()
 	class AMario64Character* FindPlayerCharacter() const;
 
 	void MoveWithoutNavMesh(UNavigationSystemV1* NavSys, FVector TargetLocation, APawn* ControlledPawn);
 
 protected:
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	UBehaviorTree* BehaviorTree;
+
+	UPROPERTY()
+	UBehaviorTreeComponent* BehaviorTreeComponent;
+
+	UPROPERTY()
+	UBlackboardComponent* BlackboardComponent;
+
+
 	UPROPERTY()
 	class AMario64Character* PlayerCharRef;
 
