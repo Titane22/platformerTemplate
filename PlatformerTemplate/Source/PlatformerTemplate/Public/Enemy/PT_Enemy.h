@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "PT_Enemy.generated.h"
 
 /**
@@ -49,4 +50,7 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	bool bIsDying = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	UBehaviorTree* BehaviorTreeAsset;
 };

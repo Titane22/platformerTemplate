@@ -17,7 +17,7 @@ EBTNodeResult::Type UBTT_SetRandomPoint::ExecuteTask(UBehaviorTreeComponent& Own
 	AAIController* AIController = OwnerComp.GetAIOwner();
 	UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
 
-	if (!AIController)
+	if (!AIController || !Blackboard)
 	{
 		return EBTNodeResult::Failed;
 	}

@@ -5,6 +5,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Animation/AnimInstance.h"
+#include "AIController.h"
 
 // 생성자
 APT_Enemy::APT_Enemy()
@@ -30,6 +31,14 @@ void APT_Enemy::BeginPlay()
 	Super::BeginPlay();
 	
 	GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+	
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		if (BehaviorTreeAsset)
+		{
+			AIC->RunBehaviorTree(BehaviorTreeAsset);
+		}
+	}
 }
 
 void APT_Enemy::Tick(float DeltaTime)
