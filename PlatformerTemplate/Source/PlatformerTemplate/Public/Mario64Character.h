@@ -69,6 +69,12 @@ public:
 	void MovementSwitchOnOff();
 	
 	bool IsStopFromPartner() { return bIsStopFromPartner; }
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	const float GetMaxHealth() { return MaxHealth; }
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	const float GetCurrentHealth() { return CurrentHealth; }
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -206,10 +212,10 @@ protected:
 	class ALadder* CurrentLadderRef;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
-	float MaxHealth = 3.0f;
+	float MaxHealth = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
-	float CurrentHealth = 3.0f;
+	float CurrentHealth = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
 	float InvulnerabilityTime = 2.0f;

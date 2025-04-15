@@ -12,6 +12,7 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Engine/DamageEvents.h"
 
 AEnemy_Bull::AEnemy_Bull()
 	:Super()
@@ -89,7 +90,6 @@ void AEnemy_Bull::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, U
 {
 	if (OtherComp && OtherActor && OtherActor != this)
 	{
-		// 자신의 컴포넌트와의 충돌을 무시
 		if (OtherComp->GetOwner() == this)
 		{
 			return;
@@ -117,8 +117,16 @@ void AEnemy_Bull::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, U
 		AMario64Character* HitPlayer = Cast<AMario64Character>(OtherActor);
 		if (HitPlayer)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Bull Enemy: Hit player - %s"), *HitPlayer->GetName());
-			
+			FPointDamageEvent DamageEvent(1.0f, Hit, -FVector::UpVector, nullptr);
+			HitPlayer->TakeDamage(1.0f, DamageEvent, nullptr, this);
+
+			float ForceFactor = 3000.0f;
+
+			FVector DirectionVector = (HitPlayer->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+			DirectionVector.Z = 0.8f;
+
+			HitPlayer->LaunchCharacter(DirectionVector * ForceFactor, true, true);
+			LaunchCharacter(-DirectionVector * ForceFactor * 0.7f, true, true);
 			// TODO: 플레이어 데미지 처리 등의 로직은 여기에 구현
 		}
 	}

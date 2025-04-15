@@ -4,6 +4,8 @@
 #include "Obstacles/SpikePlatform.h"
 #include "Components/TimelineComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/DamageEvents.h"
+#include "Mario64Character.h"
 
 // Sets default values
 ASpikePlatform::ASpikePlatform()
@@ -37,6 +39,8 @@ void ASpikePlatform::BeginPlay()
 
 		SpikeTimeline->PlayFromStart();
 	}
+
+	SpikeMesh->OnComponentHit.AddDynamic(this, &ASpikePlatform::OnHit);
 }
 
 // Called every frame
@@ -95,6 +99,25 @@ void ASpikePlatform::OnTimelineFinished()
 			2.0f,
 			false
 		);
+	}
+}
+
+void ASpikePlatform::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (OtherActor)
+	{
+		AMario64Character* Player = Cast<AMario64Character>(OtherActor);
+		if (Player)
+		{
+			FPointDamageEvent DamageEvent(1.0f, Hit, -FVector::UpVector, nullptr);
+			Player->TakeDamage(1.0f, DamageEvent, nullptr, this);
+
+			float ForceFactor = 1000.0f;
+
+			FVector DirectionVector = (Player->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+			DirectionVector.Z = 0.3f;
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("ASpikePlatform::OnHit("));
+		}
 	}
 }
 

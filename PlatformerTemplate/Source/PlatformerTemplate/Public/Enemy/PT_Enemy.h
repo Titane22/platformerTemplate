@@ -37,7 +37,6 @@ public:
 	UFUNCTION()
 	virtual void OnDieMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	
-	// 타이머 기반 강제 파괴 함수
 	UFUNCTION()
 	void ForceDestroy();
 

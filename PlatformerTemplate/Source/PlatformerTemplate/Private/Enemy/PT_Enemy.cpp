@@ -112,7 +112,6 @@ void APT_Enemy::Die_Implementation()
 	}
 }
 
-// 강제 파괴 함수 추가
 void APT_Enemy::ForceDestroy()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Force destroying enemy after montage timeout"));
