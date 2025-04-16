@@ -44,6 +44,15 @@ void ACheckPoint_Flag::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActo
 		if (APlatformerTemplateGameMode* GameMode = Cast<APlatformerTemplateGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
 			GameMode->LastCheckPoint = this;
+			BoxCollision->OnComponentBeginOverlap.RemoveDynamic(this, &ACheckPoint_Flag::OnOverlapBegin);
+			if (CheckpointSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(
+					GetWorld(), 
+					CheckpointSound, 
+					GetActorLocation(),
+					1.0f, 1.0f, 0.25f);
+			}
 		}
 	}
 }

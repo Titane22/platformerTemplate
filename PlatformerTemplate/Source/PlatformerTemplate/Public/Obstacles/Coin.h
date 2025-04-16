@@ -55,6 +55,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Curve")
 	UCurveFloat* RotatingDownCurve;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* GettingCoinSound;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configs")
 	bool bIsLocationUP = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configs")
+	float CoinValue = 2.0f;
 };

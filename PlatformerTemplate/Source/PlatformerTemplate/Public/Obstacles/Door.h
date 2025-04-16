@@ -50,5 +50,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Curve")
 	UCurveFloat* OpenCurve;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	USoundBase* OpenSound;
+
 	bool bIsOpenable = false;
 };

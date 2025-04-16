@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Mario64Character.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ASpikePlatform::ASpikePlatform()
@@ -72,6 +73,15 @@ void ASpikePlatform::OnTimelineFinished()
 	{
 		bIsRising = false;
 
+		if (RisingSpikeSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				GetWorld(), 
+				RisingSpikeSound, 
+				GetActorLocation(),
+				1.0f, 1.0f, SoundStartTime);
+		}
+		
 		SpikeTimeline->SetPlayRate(DescendSpeedMultiplier);
 		FTimerHandle TimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(
@@ -115,7 +125,6 @@ void ASpikePlatform::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
 			float ForceFactor = 1000.0f;
 
 			FVector DirectionVector = (Player->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-			DirectionVector.Z = 0.3f;
 			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("ASpikePlatform::OnHit("));
 		}
 	}

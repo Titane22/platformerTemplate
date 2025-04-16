@@ -4,6 +4,7 @@
 #include "Obstacles/Door.h"
 #include "Obstacles/ClearKey.h"
 #include "Mario64Character.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ADoor::ADoor()
@@ -65,5 +66,9 @@ void ADoor::UpdateDoorRotation(float Value)
 
 void ADoor::OpenTheDoor()
 {
+	if (OpenSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), OpenSound, GetActorLocation());
+	}
 	OpenTimeline->PlayFromStart();
 }

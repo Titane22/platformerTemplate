@@ -175,6 +175,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
 	float CurrentJumpTime = 0.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	USoundBase* SingleJumpSound;
+
 	float CurrentMoveTime = 0.0f;
 
 	float CurrentWallHitTime = 0.0f;

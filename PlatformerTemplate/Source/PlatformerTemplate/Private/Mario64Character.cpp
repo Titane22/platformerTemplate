@@ -301,6 +301,13 @@ void AMario64Character::Jump()
 			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("U-Turn Montage is Not Set"));
 		}
 	}
+
+	// TODO: Seprate Jump Sound as Single/Double/Tirrple
+	if (SingleJumpSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), SingleJumpSound, GetActorLocation());
+	}
+
 	bIsJumping = true;
 	CurrentState = EActionState::Flying;
 	Super::Jump();

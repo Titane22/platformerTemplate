@@ -34,4 +34,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UBoxComponent* BoxCollision;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	USoundBase* CheckpointSound;
 };

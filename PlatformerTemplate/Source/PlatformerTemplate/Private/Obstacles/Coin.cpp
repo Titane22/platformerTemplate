@@ -4,6 +4,8 @@
 #include "Obstacles/Coin.h"
 #include "Components/TimelineComponent.h"
 #include "Mario64Character.h"
+#include "PlatformerGameStateBase.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ACoin::ACoin()
@@ -70,7 +72,15 @@ void ACoin::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 {
 	if (AMario64Character* Player = Cast<AMario64Character>(OtherActor))
 	{
-		// TODO: Add coin pickup sound
+		if (APlatformerGameStateBase* GameState = Cast<APlatformerGameStateBase>(GetWorld()->GetGameState()))
+		{
+			GameState->AddScore(CoinValue);
+		}
+		
+		if (GettingCoinSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, GettingCoinSound, GetActorLocation());
+		}
 		
 		Destroy();
 	}

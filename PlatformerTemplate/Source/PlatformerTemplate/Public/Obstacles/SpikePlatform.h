@@ -47,6 +47,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spike")
 	UCurveFloat* SpikeCurve;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* RisingSpikeSound;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float DescendSpeedMultiplier = 0.5f;
 
@@ -55,4 +58,7 @@ protected:
 	float SpikeDown = -30.0f;
 
 	bool bIsRising = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	float SoundStartTime = 0.15f;
 };
