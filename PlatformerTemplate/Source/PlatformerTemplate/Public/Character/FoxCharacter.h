@@ -17,6 +17,8 @@ class PLATFORMERTEMPLATE_API AFoxCharacter : public AMario64Character
 
 public:
 	AFoxCharacter();
+
+	virtual void BeginPlay() override;
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -49,4 +51,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
 	float ThrowUpwardForce = 300.0f;
+
+	float OriginSprintSpeed;
+	float OriginWalkSpeed;
+
+	float HoldingSprintSpeed = 150.0f;
+	float HoldingWalkSpeed = 75.0f;
 };

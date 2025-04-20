@@ -48,12 +48,15 @@ void ADoor::Tick(float DeltaTime)
 
 void ADoor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (AMario64Character* Player = Cast<AMario64Character>(OtherActor))
+	if (OtherActor && OtherActor != this)
 	{
-		if (AClearKey* ClearKey = Player->GetClearKey())
+		if (AMario64Character* Player = Cast<AMario64Character>(OtherActor))
 		{
-			ClearKey->Destroy();
-			OpenTheDoor();
+			if (AClearKey* ClearKey = Player->GetClearKey())
+			{
+				ClearKey->Destroy();
+				OpenTheDoor();
+			}
 		}
 	}
 }

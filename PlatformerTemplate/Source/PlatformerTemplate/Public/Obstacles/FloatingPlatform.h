@@ -18,6 +18,7 @@ public:
 	// Sets default values for this actor's properties
 	AFloatingPlatform();
 
+	void PlayFloating();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -45,6 +46,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float WaitTime = 1.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	bool bIsMovable = true;
 private:
 	FVector InitialLocation;
 

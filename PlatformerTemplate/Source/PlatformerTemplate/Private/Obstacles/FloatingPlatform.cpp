@@ -18,6 +18,19 @@ AFloatingPlatform::AFloatingPlatform()
 	FloatingTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Floating Timeline"));
 }
 
+void AFloatingPlatform::PlayFloating()
+{
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle,
+		[this]() {
+			FloatingTimeline->PlayFromStart();
+		},
+		TimeOffset,
+		false
+	);
+}
+
 // Called when the game starts or when spawned
 void AFloatingPlatform::BeginPlay()
 {
@@ -35,15 +48,18 @@ void AFloatingPlatform::BeginPlay()
 		FloatingFinished.BindUFunction(this, FName("OnTimelineFinished"));
 		FloatingTimeline->SetTimelineFinishedFunc(FloatingFinished);
 
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(
-			TimerHandle,
-			[this]() {
-				FloatingTimeline->PlayFromStart();
-			},
-			TimeOffset,
-			false
-		);
+		if (bIsMovable)
+		{
+			FTimerHandle TimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(
+				TimerHandle,
+				[this]() {
+					FloatingTimeline->PlayFromStart();
+				},
+				TimeOffset,
+				false
+			);
+		}
 	}
 }
 

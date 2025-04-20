@@ -231,6 +231,10 @@ void AMario64Character::Look(const FInputActionValue& Value)
 
 void AMario64Character::Jump()
 {
+	if (CurrentState == EActionState::Burrowed)
+	{
+		return;
+	}
 	// TODO: Check if Max Speed
 	if (CurrentState == EActionState::Crouching && bWasRunning)
 	{
@@ -365,11 +369,11 @@ void AMario64Character::Landed(const FHitResult& Hit)
 		CurrentWallHitTime = 0.0f;
 		if (bIsSprinting)
 		{
-			GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+			GetCharacterMovement()->MaxWalkSpeed = SprintMaxSpeed;
 		}
 		else
 		{
-			GetCharacterMovement()->MaxWalkSpeed = 230.0f;
+			GetCharacterMovement()->MaxWalkSpeed = WalkMaxSpeed;
 		}
 	}
 }
@@ -380,11 +384,11 @@ void AMario64Character::Sprint(const FInputActionValue& Value)
 
 	if (bIsSprinting)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+		GetCharacterMovement()->MaxWalkSpeed = SprintMaxSpeed;
 	}
 	else
 	{
-		GetCharacterMovement()->MaxWalkSpeed = 230.0f;
+		GetCharacterMovement()->MaxWalkSpeed = WalkMaxSpeed;
 	}
 }
 
@@ -523,6 +527,7 @@ void AMario64Character::ResetLevel()
 		// 체크포인트가 있으면 RespawnPlayer 사용
 		if (GameMode->LastCheckPoint)
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("GameMode->LastCheckPoint"));
 			GameMode->RespawnPlayer();
 		}
 		else
@@ -680,6 +685,7 @@ void AMario64Character::Die_Implementation()
 
 	SetState(EActionState::Die);
 
+	
 	FTimerHandle DieTimerHandle;
 	GetWorldTimerManager().SetTimer(
 		DieTimerHandle,

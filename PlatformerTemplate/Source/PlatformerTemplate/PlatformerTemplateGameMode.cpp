@@ -11,6 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "GameFramework/PlayerStart.h"
 
 APlatformerTemplateGameMode::APlatformerTemplateGameMode()
 {
@@ -21,12 +22,31 @@ void APlatformerTemplateGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SpawnCharacter(FVector(0.0f, 0.0f, 100.0f));
+	if (InitCheckpoint)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Called"));
+		SpawnCharacter(InitCheckpoint->GetActorLocation());
+	}
+	else
+	{
+		AActor* PlayerStart = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());
+		if (PlayerStart)
+		{
+			SpawnCharacter(PlayerStart->GetActorLocation());
+		}
+		else
+		{
+			SpawnCharacter(FVector(0.0f, 0.0f, 100.0f));
+		}
+	}
+	
 }
 
 void APlatformerTemplateGameMode::SpawnCharacter(FVector SpawnLocation)
 {
 	FRotator SpawnRotation = FRotator(0.0f, 0.0f, 0.0f);
+
+	SpawnLocation.Z += 100.0f; 
 
 	Potato = GetWorld()->SpawnActor<APotatoCharacter>(
 		PotatoCharacterClass,
@@ -40,11 +60,11 @@ void APlatformerTemplateGameMode::SpawnCharacter(FVector SpawnLocation)
 		SpawnRotation
 	);
 
-	Potato->SetPartner(Fox);
-	Fox->SetPartner(Potato);
-
-	if (Potato)
+	if (Potato && Fox)
 	{
+		Potato->SetPartner(Fox);
+		Fox->SetPartner(Potato);
+
 		if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
 			PC->Possess(Potato);
@@ -63,14 +83,15 @@ void APlatformerTemplateGameMode::SpawnCharacter(FVector SpawnLocation)
 			}
 		}
 
-		if (Fox)
-		{
-			Fox->SpawnDefaultController();
-		}
+		Fox->SpawnDefaultController();
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("APlatformerTemplateGameMode::BeginPlay() Potato is null"));
+		if (!Potato) UE_LOG(LogTemp, Error, TEXT("Potato character failed to spawn"));
+		if (!Fox) UE_LOG(LogTemp, Error, TEXT("Fox character failed to spawn"));
+		
+		if (!PotatoCharacterClass) UE_LOG(LogTemp, Error, TEXT("PotatoCharacterClass is not set!"));
+		if (!FoxCharacterClass) UE_LOG(LogTemp, Error, TEXT("FoxCharacterClass is not set!"));
 	}
 }
 
@@ -82,10 +103,8 @@ void APlatformerTemplateGameMode::RespawnPlayer()
 		return;
 	}
 
-	if (ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
-	{
-		PlayerCharacter->Destroy();
-	}
+	Potato->Destroy();
+	Fox->Destroy();
 
 	// TODO: 이미 캐릭터가 존재하는지 확인 
 	if (ACharacter* ExistingCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
@@ -114,4 +133,60 @@ void APlatformerTemplateGameMode::RespawnPlayer()
 	}
 	
 	SpawnCharacter(SpawnLocation);
+}
+
+void APlatformerTemplateGameMode::SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMario64Character* IndicatorCharacterRef)
+{
+	LastCheckPoint = ToSetFlag;
+
+	if (!IndicatorCharacterRef)
+		return;
+
+	bool bIsPotatoPlayer = false;
+
+	if (APotatoCharacter* tempPotato = Cast<APotatoCharacter>(IndicatorCharacterRef))
+	{
+		bIsPotatoPlayer = true;
+	}
+
+	float Distance = FVector::Distance(Potato->GetActorLocation(), Fox->GetActorLocation());
+
+	if (Distance >= 1000.0f)
+	{
+		FVector SpawnLocation = ToSetFlag->GetActorLocation() + FVector(0.0f, 150.0f, 50.0f);
+		FRotator SpawnRotration = FRotator(0.0f, 0.0f, 0.0f);
+
+		if (bIsPotatoPlayer)
+		{
+			TeleportCharacter(Fox, SpawnLocation, SpawnRotration);
+		}
+		else
+		{
+			TeleportCharacter(Potato, SpawnLocation, SpawnRotration);
+		}
+	}
+}
+
+void APlatformerTemplateGameMode::TeleportCharacter(AMario64Character* ToTeleportCharacter, const FVector& SpawnLocation, const FRotator& SpawnRotration)
+{
+	ToTeleportCharacter->SetActorLocationAndRotation(SpawnLocation, SpawnRotration);
+
+	if (TeleportEffect)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			TeleportEffect,
+			SpawnLocation,
+			SpawnRotration
+		);
+	}
+
+	if (TeleportSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			TeleportSound,
+			SpawnLocation
+		);
+	}
 }

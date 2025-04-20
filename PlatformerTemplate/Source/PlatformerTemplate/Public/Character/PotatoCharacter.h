@@ -77,6 +77,9 @@ protected:
 
 	TArray<AActor*> OnPotatoHead;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+	FVector LaunchVelocity = FVector(0.0f, 0.0f, 2500.0f);
+
 	float CurrentBurrowTime = 0.0f;
 
 	float BurrowMaxTime = 2.0f;
@@ -88,5 +91,6 @@ protected:
 	bool bWasBurrowed = false;
 
 	bool bIsBurrowed = false;
+
 
 };

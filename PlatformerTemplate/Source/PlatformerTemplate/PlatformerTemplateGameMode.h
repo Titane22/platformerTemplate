@@ -9,6 +9,7 @@
 class AMario64Character;
 class APotatoCharacter;
 class AFoxCharacter;
+class ACheckPoint_Flag;
 
 UCLASS(minimalapi)
 class APlatformerTemplateGameMode : public AGameModeBase
@@ -19,13 +20,18 @@ public:
 	APlatformerTemplateGameMode();
 
 	void RespawnPlayer();
+
+	void SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMario64Character* IndicatorCharacterRef);
+
+	void TeleportCharacter(AMario64Character* ToTeleportCharacter, const FVector& SpawnLocation, const FRotator& SpawnRotration);
+
 protected:
 	virtual void BeginPlay() override;
 
 	void SpawnCharacter(FVector SpawnLocation);
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Checkpoints")
+	UPROPERTY()
 	class ACheckPoint_Flag* LastCheckPoint;
 
 	APotatoCharacter* Potato;
@@ -38,6 +44,18 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Configs")
 	TSubclassOf<AFoxCharacter> FoxCharacterClass;
+
+	UPROPERTY()
+	AActor* InitCheckpoint;
+
+	UPROPERTY()
+	TArray<AActor*> LevelCheckpoints;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	UParticleSystem* TeleportEffect;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	USoundBase* TeleportSound;
 };
 
 

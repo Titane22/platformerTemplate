@@ -7,12 +7,21 @@
 #include "EnhancedActionKeyMapping.h"
 #include "EnhancedInputComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Character/PotatoCharacter.h"
 
 AFoxCharacter::AFoxCharacter()
 	:Super()
 {
 	PickingPoint = CreateDefaultSubobject<USceneComponent>(TEXT("Picking Point"));
 	PickingPoint->SetupAttachment(RootComponent);
+}
+
+void AFoxCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	OriginSprintSpeed = SprintMaxSpeed;
+	OriginWalkSpeed = WalkMaxSpeed;
 }
 
 void AFoxCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -73,6 +82,8 @@ void AFoxCharacter::ThrowHeldActor()
 			MovementComp->SetMovementMode(EMovementMode::MOVE_Falling);
 			// 캐릭터가 날아가는 동안 회전하지 않도록 설정
 			MovementComp->bOrientRotationToMovement = false;
+			SprintMaxSpeed = OriginSprintSpeed;
+			WalkMaxSpeed = OriginWalkSpeed;
 		}
 		
 		if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(MarioCharacter->GetRootComponent()))
@@ -101,6 +112,8 @@ void AFoxCharacter::ThrowHeldActor()
 
 	bIsHoldingActor = false;
 	HeldActor = nullptr;
+	CurrentState = EActionState::Idle;
+
 }
 
 void AFoxCharacter::OnThrownCharacterHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
@@ -126,6 +139,7 @@ void AFoxCharacter::OnThrownCharacterHit(UPrimitiveComponent* HitComponent, AAct
 		FRotator UpRotation = FRotator(0.0f, MarioCharacter->GetActorRotation().Yaw, 0.0f);
 		MarioCharacter->SetActorRotation(UpRotation);
 		HitComponent->OnComponentHit.RemoveDynamic(this, &AFoxCharacter::OnThrownCharacterHit);
+		TagCharacter();
 	}
 }
 
@@ -191,32 +205,41 @@ void AFoxCharacter::HoldActor()
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor && !HitActor->IsRootComponentStatic() && !HitActor->IsRootComponentStationary())
 		{
-			if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(HitActor->GetRootComponent()))
+			if (APotatoCharacter* Potato = Cast<APotatoCharacter>(HitActor))
 			{
-				PrimComp->SetSimulatePhysics(false);
-				PrimComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-				PrimComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-
-				if (AMario64Character* Potato = Cast<AMario64Character>(HitActor))
+				// 중요: Character 클래스의 경우 무브먼트 컴포넌트의 틱을 비활성화해야 함
+				// 무브먼트 컴포넌트는 매 프레임마다 캐릭터의 위치와 회전을 자동으로 계산하는데,
+				// 이 계산이 부착된 캐릭터가 마우스 움직임에 따라 회전하는 원인임
+				// 이 코드가 없으면 부착된 캐릭터가 마우스 회전에 영향을 받아 계속 회전하게 됨
+				if (Potato->GetPlayerState() != EActionState::Idle)
 				{
-					// 중요: Character 클래스의 경우 무브먼트 컴포넌트의 틱을 비활성화해야 함
-					// 무브먼트 컴포넌트는 매 프레임마다 캐릭터의 위치와 회전을 자동으로 계산하는데,
-					// 이 계산이 부착된 캐릭터가 마우스 움직임에 따라 회전하는 원인임
-					// 이 코드가 없으면 부착된 캐릭터가 마우스 회전에 영향을 받아 계속 회전하게 됨
-					if (UCharacterMovementComponent* MovementComp = Potato->GetCharacterMovement())
-					{
-						MovementComp->SetComponentTickEnabled(false);
-					}
+					return;
 				}
-				
-				HitActor->AttachToComponent(
-					PickingPoint,
-					FAttachmentTransformRules::SnapToTargetNotIncludingScale
-				);
+				SprintMaxSpeed = HoldingSprintSpeed;
+				WalkMaxSpeed = HoldingWalkSpeed;
+				GetCharacterMovement()->MaxWalkSpeed = WalkMaxSpeed;
+				CurrentState = EActionState::Helding;
 
-				bIsHoldingActor = true;
-				HeldActor = HitActor;
+				if (UCharacterMovementComponent* MovementComp = Potato->GetCharacterMovement())
+				{
+					MovementComp->SetComponentTickEnabled(false);
+				}
+				if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(HitActor->GetRootComponent()))
+				{
+					PrimComp->SetSimulatePhysics(false);
+					PrimComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					PrimComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+
+					HitActor->AttachToComponent(
+						PickingPoint,
+						FAttachmentTransformRules::SnapToTargetNotIncludingScale
+					);
+
+					bIsHoldingActor = true;
+					HeldActor = HitActor;
+				}
 			}
+			
 		}
 	}
 }

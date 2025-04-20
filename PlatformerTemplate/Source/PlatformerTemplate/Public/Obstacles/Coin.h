@@ -39,6 +39,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void PlayTimeline();
+
+	void StopTimeline();
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UStaticMeshComponent* CoinMesh;
@@ -63,4 +67,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configs")
 	float CoinValue = 2.0f;
+
+	float OriginZ;
 };

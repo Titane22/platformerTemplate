@@ -37,8 +37,6 @@ void APotatoCharacter::BeginPlay()
 	OrgCollisionEnabled = GetCapsuleComponent()->GetCollisionEnabled();
 	SaveOriginalCollisionResponses();
 	
-	BurrowBox->OnComponentHit.AddDynamic(this, &APotatoCharacter::OnBurrowBoxHit);
-
 	/*if (BurrowCurve)
 	{
 		FOnTimelineFloat BurrowCallback;
@@ -73,15 +71,10 @@ void APotatoCharacter::ImpulseForceOnPotatoHead()
 		if (!Actor)
 			continue;
 
-		if (USkeletalMeshComponent* MeshComp = Actor->FindComponentByClass<USkeletalMeshComponent>())
+		if (ACharacter* CharacterOnHead = Cast<ACharacter>(Actor))
 		{
-			FVector ForceVector = FVector(0.0f, 0.0f, 1500.0f);
-			MeshComp->AddImpulse(ForceVector, NAME_None, true);
-
-			DrawDebugDirectionalArrow(GetWorld(),
-				Actor->GetActorLocation(),
-				Actor->GetActorLocation() + ForceVector.GetSafeNormal() * 100.0f,
-				20.0f, FColor::Red, false, 0.5f, 0, 2.0f);
+			CharacterOnHead->LaunchCharacter(LaunchVelocity, false, false);
+			//TagCharacter();
 		}
 	}
 }
@@ -94,6 +87,10 @@ void APotatoCharacter::OnBurrowBoxHit(UPrimitiveComponent* HitComponent, AActor*
 	if (Hit.ImpactPoint.Z > BurrowBox->GetComponentLocation().Z)
 	{
 		OnPotatoHead.AddUnique(OtherActor);
+		if (AMario64Character* Fox = Cast<AMario64Character>(OtherActor))
+		{
+			Unburrow();
+		}
 	}
 }
 
@@ -136,7 +133,7 @@ void APotatoCharacter::ToogleBurrow(const FInputActionValue& Value)
 		return;
 	if (!CheckPlatGround())
 		return;
-	bIsBurrowed = Value.Get<bool>();
+	bIsBurrowed = !bIsBurrowed;
 	if (bIsBurrowed)
 	{
 		Burrow();
@@ -158,6 +155,7 @@ void APotatoCharacter::Burrow()
 		DrawDebugBox(GetWorld(), BoxOrigin, BoxExtent, FColor::Yellow, false, 3.0f);
 
 		BurrowBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		BurrowBox->OnComponentHit.AddDynamic(this, &APotatoCharacter::OnBurrowBoxHit);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		
 		// TODO: Need to Check, if Other Actor can move up
@@ -170,18 +168,25 @@ void APotatoCharacter::Burrow()
 void APotatoCharacter::Unburrow()
 {
 	SetState(EActionState::Idle);
-
 	
 	if (BurrowBox)
 	{
 		BurrowBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		BurrowBox->OnComponentHit.RemoveDynamic(this, &APotatoCharacter::OnBurrowBoxHit);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		
 		GetCapsuleComponent()->SetCollisionEnabled(OrgCollisionEnabled);
-		ImpulseForceOnPotatoHead();
 
-		FVector ImpulsePower = FVector(0.0f, 0.0f, 800.0f);
-		LaunchCharacter(ImpulsePower, false, false);
+		if (OnPotatoHead.Num() > 0)
+		{
+			ImpulseForceOnPotatoHead();
+		}
+		else
+		{
+			FVector ImpulsePower = FVector(0.0f, 0.0f, 800.0f);
+			LaunchCharacter(ImpulsePower, false, false);
+		}
+		
 		for (int32 i = 0; i < COL_MAX; i++)
 		{
 			ECollisionChannel Channel = static_cast<ECollisionChannel>(i);

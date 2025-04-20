@@ -30,7 +30,10 @@ enum class EActionState : uint8
 	Die			UMETA(DisplayName = "Die"),
 
 	/// For Potato Character
-	Burrowed	UMETA(DisplayName = "Burrowed")
+	Burrowed	UMETA(DisplayName = "Burrowed"),
+
+	/// For Fox Character
+	Helding		UMETA(DisplayName = "Helding")
 };
 
 UCLASS(config = Game, BlueprintType, hideCategories = (Navigation))
@@ -75,6 +78,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	const float GetCurrentHealth() { return CurrentHealth; }
+
+	EActionState GetPlayerState() { return CurrentState; }
+
+	AMario64Character* GetPartner() const { return PartnerRef; }
+
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -246,6 +254,12 @@ protected:
 	float DisableGravityScale = 0.0f;
 
 	bool bIsStopFromPartner = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float SprintMaxSpeed = 500.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float WalkMaxSpeed = 230.0f;
 
 	AMario64Character* PartnerRef;
 

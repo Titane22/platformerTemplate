@@ -5,16 +5,17 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
-#include "CheckPoint_Flag.generated.h"
+#include "Components/TimelineComponent.h"
+#include "Lever.generated.h"
 
 UCLASS()
-class PLATFORMERTEMPLATE_API ACheckPoint_Flag : public AActor
+class PLATFORMERTEMPLATE_API ALever : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ACheckPoint_Flag();
+	ALever();
 
 protected:
 	// Called when the game starts or when spawned
@@ -23,21 +24,39 @@ protected:
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void UpdateFloorRotation(float Value);
+
+	void ActivateLever();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	int32 GetCheckpointOrder() { return CheckpointOrder; }
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UStaticMeshComponent* FlagMesh;
+	UStaticMeshComponent* LeverBase;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	UBoxComponent* BoxCollision;
+	UStaticMeshComponent* LeverMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UBoxComponent* ActivatableCheckVolume;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	UTimelineComponent* ActivateTimeline;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Curve")
+	UCurveFloat* ActivateCurve;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
-	USoundBase* CheckpointSound;
+	USoundBase* ActivateSound;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Checkpoints")
-	int32 CheckpointOrder = 0;
+	bool bIsActivaable = false;
+	
+	// TEMP
+	FRotator OriginRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activate")
+	AActor* TargetRef;
 };
