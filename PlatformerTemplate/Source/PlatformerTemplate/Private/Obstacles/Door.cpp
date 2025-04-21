@@ -3,9 +3,9 @@
 
 #include "Obstacles/Door.h"
 #include "Obstacles/ClearKey.h"
+#include "Obstacles/Portal.h"
 #include "Mario64Character.h"
 #include "Kismet/GameplayStatics.h"
-
 // Sets default values
 ADoor::ADoor()
 {
@@ -37,6 +37,10 @@ void ADoor::BeginPlay()
 		FOnTimelineFloat OpenUpdate;
 		OpenUpdate.BindUFunction(this, FName("UpdateDoorRotation"));
 		OpenTimeline->AddInterpFloat(OpenCurve, OpenUpdate);
+
+		FOnTimelineEvent OpenFinished;
+		OpenFinished.BindUFunction(this, FName("FinishedDoorRotation"));
+		OpenTimeline->SetTimelineFinishedFunc(OpenFinished);
 	}
 }
 
@@ -67,11 +71,48 @@ void ADoor::UpdateDoorRotation(float Value)
 	DoorMesh->SetRelativeRotation(NewRotation);
 }
 
+void ADoor::FinishedDoorRotation()
+{
+	if (Portal)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Portal is Valid"));
+		return;
+	}
+	if (!BP_PortalClass)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("BP_PortalClass is Null"));
+		return;
+	}
+	if (!Portal && BP_PortalClass)
+	{
+		FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 100.0f;
+		FRotator SpawnRotation = GetActorRotation();
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		Portal = GetWorld()->SpawnActor<APortal>(
+			BP_PortalClass,
+			SpawnLocation,
+			SpawnRotation,
+			SpawnParams
+		);
+
+		if (Portal)
+		{
+			Portal->SetLevel(TargetLevelName);
+		}
+	}
+}
+
 void ADoor::OpenTheDoor()
 {
 	if (OpenSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), OpenSound, GetActorLocation());
 	}
+	bIsOpenable = false;
 	OpenTimeline->PlayFromStart();
+	OpenableCheckVolume->OnComponentBeginOverlap.RemoveDynamic(this, &ADoor::OnOverlapBegin);
 }

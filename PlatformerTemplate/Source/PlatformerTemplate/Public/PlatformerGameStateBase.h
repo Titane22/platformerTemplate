@@ -6,6 +6,8 @@
 #include "GameFramework/GameStateBase.h"
 #include "PlatformerGameStateBase.generated.h"
 
+class AHavingKeySquirrel;
+
 /**
  * 
  */
@@ -30,4 +32,6 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Category = "Scoring")
 	float LevelMaxScore = 100.0f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Scoring")
+	AHavingKeySquirrel* HavingKeySquirrelInThisLevel;
 };

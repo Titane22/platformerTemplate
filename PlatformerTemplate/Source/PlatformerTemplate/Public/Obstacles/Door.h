@@ -8,6 +8,8 @@
 #include "Components/TimelineComponent.h"
 #include "Door.generated.h"
 
+class APortal;
+
 UCLASS()
 class PLATFORMERTEMPLATE_API ADoor : public AActor
 {
@@ -27,6 +29,9 @@ protected:
 
 	UFUNCTION()
 	void UpdateDoorRotation(float Value);
+
+	UFUNCTION()
+	void FinishedDoorRotation();
 
 	void OpenTheDoor();
 
@@ -53,5 +58,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	USoundBase* OpenSound;
 
-	bool bIsOpenable = false;
+	bool bIsOpenable = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Levels")
+	TSubclassOf<APortal> BP_PortalClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Levels")
+	APortal* Portal;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Levels")
+	FName TargetLevelName;
 };
