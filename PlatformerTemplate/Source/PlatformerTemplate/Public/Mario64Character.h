@@ -61,7 +61,9 @@ public:
 
 	void SetClearKey(AClearKey* ToSetKey);
 
-	AClearKey* GetClearKey() const { return ClearKeyRef; }
+	AClearKey* GetClearKey() const { return ClearKeyRef.Get(); }
+
+	void ClearKeyReference() { ClearKeyRef = nullptr; }
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -143,8 +145,6 @@ protected:
 
 	UFUNCTION()
 	void EndInvulnerability();
-
-	void ClearKeyReference() { ClearKeyRef = nullptr; }
 
 	void CallStop();
 
@@ -238,7 +238,7 @@ protected:
 	bool bHasKey = false;
 
 	UPROPERTY()
-	AClearKey* ClearKeyRef = nullptr;
+	TWeakObjectPtr<AClearKey> ClearKeyRef = nullptr;
 
 	FTimerHandle InvulnerabilityTimerHandle;
 	

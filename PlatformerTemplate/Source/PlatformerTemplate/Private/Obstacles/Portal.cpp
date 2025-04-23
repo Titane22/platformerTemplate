@@ -104,12 +104,5 @@ void APortal::TravelToLevel()
 	GetWorldTimerManager().ClearAllTimersForObject(this);
 	CurrentOverlappingActor = nullptr;
 	UGameplayStatics::OpenLevel(GetWorld(), TargetLevelName);
-	
-	GetWorldTimerManager().SetTimer(
-		PortalCooldownTimerHandle,
-		[this]() { bIsPortalReady = true; },
-		PortalCooldown,
-		false
-	);
 }
 

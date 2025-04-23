@@ -33,6 +33,7 @@ protected:
 	UFUNCTION()
 	void FinishedDoorRotation();
 
+	UFUNCTION(BlueprintCallable, Category = "Action")
 	void OpenTheDoor();
 
 public:	
@@ -51,6 +52,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	UTimelineComponent* OpenTimeline;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	USceneComponent* PortalPoint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Curve")
 	UCurveFloat* OpenCurve;

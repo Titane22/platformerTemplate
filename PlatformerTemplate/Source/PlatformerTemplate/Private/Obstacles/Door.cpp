@@ -18,6 +18,9 @@ ADoor::ADoor()
 	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Door Mesh"));
 	DoorMesh->SetupAttachment(DoorThreshold);
 
+	PortalPoint = CreateDefaultSubobject<USceneComponent>(TEXT("Portal Point"));
+	PortalPoint->SetupAttachment(RootComponent);
+
 	RootComponent = DoorThreshold;
 
 	OpenableCheckVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("Openable Check Volume"));
@@ -58,8 +61,12 @@ void ADoor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherAct
 		{
 			if (AClearKey* ClearKey = Player->GetClearKey())
 			{
-				ClearKey->Destroy();
-				OpenTheDoor();
+				if (IsValid(ClearKey))
+				{
+					ClearKey->Destroy();
+					Player->ClearKeyReference();
+					OpenTheDoor();
+				}
 			}
 		}
 	}
@@ -85,7 +92,7 @@ void ADoor::FinishedDoorRotation()
 	}
 	if (!Portal && BP_PortalClass)
 	{
-		FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 100.0f;
+		FVector SpawnLocation = GetActorLocation() + FVector(0.0f, 0.0f, 100.0f);
 		FRotator SpawnRotation = GetActorRotation();
 
 		FActorSpawnParameters SpawnParams;

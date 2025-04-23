@@ -22,24 +22,17 @@ void APlatformerTemplateGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (InitCheckpoint)
+	UE_LOG(LogTemp, Log, TEXT("Level started: %s"), *GetWorld()->GetName());
+
+	AActor* PlayerStart = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());
+	if (PlayerStart)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Called"));
-		SpawnCharacter(InitCheckpoint->GetActorLocation());
+		SpawnCharacter(PlayerStart->GetActorLocation());
 	}
 	else
 	{
-		AActor* PlayerStart = UGameplayStatics::GetActorOfClass(GetWorld(), APlayerStart::StaticClass());
-		if (PlayerStart)
-		{
-			SpawnCharacter(PlayerStart->GetActorLocation());
-		}
-		else
-		{
-			SpawnCharacter(FVector(0.0f, 0.0f, 100.0f));
-		}
+		SpawnCharacter(FVector(0.0f, 0.0f, 100.0f));
 	}
-	
 }
 
 void APlatformerTemplateGameMode::SpawnCharacter(FVector SpawnLocation)

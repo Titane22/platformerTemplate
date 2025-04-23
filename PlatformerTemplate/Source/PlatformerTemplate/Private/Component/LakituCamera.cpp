@@ -34,8 +34,14 @@ void ULakituCamera::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	InitializeCamera();
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle,
+		this,
+		&ULakituCamera::InitializeCamera,
+		1.0f,
+		false
+	);
 
 	if (AMario64Character* OwnerCharacter = Cast<AMario64Character>(GetOwner()))
 	{

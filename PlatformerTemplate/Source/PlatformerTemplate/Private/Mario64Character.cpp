@@ -58,7 +58,6 @@ void AMario64Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 void AMario64Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
 	// 점프 상태 업데이트
 	if (GetCharacterMovement()->IsMovingOnGround() && 
 		GetWorld()->GetTimeSeconds() - CurrentJumpTime > NextJumpMaxIdleTime)
@@ -529,6 +528,7 @@ void AMario64Character::ResetLevel()
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("GameMode->LastCheckPoint"));
 			GameMode->RespawnPlayer();
+			SetState(EActionState::Idle);
 		}
 		else
 		{
@@ -677,7 +677,7 @@ float AMario64Character::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 
 void AMario64Character::Die_Implementation()
 {
-	if (ClearKeyRef)
+	if (ClearKeyRef.IsValid())
 	{
 		ClearKeyRef->ResetKey();
 		ClearKeyRef = nullptr;
@@ -780,15 +780,12 @@ void AMario64Character::SetClearKey(AClearKey* ToSetKey)
 
 void AMario64Character::JumpToDestination(FVector Destination)
 {
-	// 시작점과 목적지 사이의 방향 벡터 계산
 	FVector Direction = Destination - GetActorLocation();
-	Direction.Z = 0; // 수평 방향만 고려
+	Direction.Z = 0; 
 	Direction.Normalize();
 	
 	// 목적지까지의 수평 거리 계산
 	float HorizontalDistance = FVector::Dist2D(GetActorLocation(), Destination);
-	
-	// 수직 높이 차이 계산
 	float HeightDifference = Destination.Z - GetActorLocation().Z;
 	
 	// 발사 속도 계산

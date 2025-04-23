@@ -45,12 +45,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Configs")
 	TSubclassOf<AFoxCharacter> FoxCharacterClass;
 
-	UPROPERTY()
-	AActor* InitCheckpoint;
-
-	UPROPERTY()
-	TArray<AActor*> LevelCheckpoints;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	UParticleSystem* TeleportEffect;
 
