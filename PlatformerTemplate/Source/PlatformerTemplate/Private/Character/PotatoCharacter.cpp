@@ -36,7 +36,7 @@ void APotatoCharacter::BeginPlay()
 
 	OrgCollisionEnabled = GetCapsuleComponent()->GetCollisionEnabled();
 	SaveOriginalCollisionResponses();
-	
+	EnableCamera(true);
 	/*if (BurrowCurve)
 	{
 		FOnTimelineFloat BurrowCallback;

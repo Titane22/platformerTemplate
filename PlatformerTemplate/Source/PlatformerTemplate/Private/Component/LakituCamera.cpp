@@ -10,6 +10,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values for this component's properties
 ULakituCamera::ULakituCamera()
@@ -47,9 +48,11 @@ void ULakituCamera::BeginPlay()
 	{
 		PreviousCharacterLocation = OwnerCharacter->GetActorLocation();
 		CharacterRef = OwnerCharacter;
+		
+		APawn* ControlledPawn = GetWorld()->GetFirstPlayerController()->GetPawn();
+		bIsCurrentCharacter = (ControlledPawn == OwnerCharacter);
 	}
 	bIsCharacterGrounded = true;
-
 }
 
 
@@ -58,13 +61,17 @@ void ULakituCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	// 현재 컨트롤 중인 캐릭터가 아니면 처리하지 않음
+	if (!bIsCurrentCharacter)
+		return;
+
 	// ...
 	if (!Camera || !CameraBoom)
 		return;
 
 	CheckCharacterGrounded();
-
 	UpdateCameraXYPosition();
+	//HandleCameraCollision();
 }
 
 void ULakituCamera::InitializeCamera()
@@ -119,25 +126,54 @@ void ULakituCamera::SmoothCameraPosition(float DeltaTime)
 
 void ULakituCamera::HandleCameraCollision()
 {
-	if (!CameraBoom)
+	if (!CameraBoom || !Camera)
 		return;
 
 	FHitResult Hit;
+	FVector CharacterLocation = GetOwner()->GetActorLocation();
+	FVector CameraLocation = Camera->GetComponentLocation();
+	
+	// 카메라에서 캐릭터 방향으로 향하는 벡터
+	FVector Direction = (CharacterLocation - CameraLocation).GetSafeNormal();
+	float Distance = TargetArmLength;
+
 	FVector StartLocation = GetOwner()->GetActorLocation();
-	FVector EndLocation = StartLocation + (CameraBoom->GetComponentRotation().Vector() * -TargetArmLength);
+	FVector EndLocation = CameraLocation + (Direction * Distance);
+
+	// 충돌 체크 라인 시각화
+	/*DrawDebugLine(
+		GetWorld(),
+		CameraLocation,
+		EndLocation,
+		FColor::Green,
+		false, 
+		-1.0f,
+		0,
+		2.0f
+	);*/
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(GetOwner());
+	
+	// 모든 플레이어 캐릭터 무시
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (PC && PC->GetPawn())
+	{
+		// 현재 컨트롤 중인 Pawn 무시 (자기 자신)
+		QueryParams.AddIgnoredActor(PC->GetPawn());
+	}
 
 	if (GetWorld()->LineTraceSingleByChannel(
 		Hit,
-		StartLocation,
-		EndLocation,
-		ECC_Camera,
+		CharacterLocation,
+		CameraLocation,
+		ECC_WorldStatic,  
 		QueryParams
 	))
 	{
-		float NewTargetArmLength = (Hit.Location - StartLocation).Size() * 0.9f;// 충돌 후 거리 조정
+		// 충돌한 경우, 카메라를 충돌 지점에서 약간 뒤로 위치시키도록 거리 계산
+		float NewTargetArmLength = (CharacterLocation - Hit.Location).Size() + 50.0f;  // 약간의 여유 공간 추가
+		
 		if (!bWasColliding)
 		{
 			CurrentInterpolationSpeed = CollisionSmoothSpeed;
@@ -146,6 +182,7 @@ void ULakituCamera::HandleCameraCollision()
 
 		CollisionAdjustmentFactor = FMath::Clamp(NewTargetArmLength / TargetArmLength, 0.0f, 1.0f);
 
+		// 충돌 시 카메라가 더 가까워지도록 설정
 		CameraBoom->TargetArmLength = FMath::FInterpTo(
 			CameraBoom->TargetArmLength,
 			NewTargetArmLength,
@@ -153,10 +190,30 @@ void ULakituCamera::HandleCameraCollision()
 			CurrentInterpolationSpeed
 		);
 
-		DrawDebugSphere(GetWorld(), Hit.Location, 10.0f, 8, FColor::Red, false, -1.0f, 0, 1.0f);
+		// 충돌 지점 시각화
+		//DrawDebugSphere(GetWorld(), Hit.Location, 10.0f, 8, FColor::Red, false, -1.0f, 0, 1.0f);
+		
+		/*DrawDebugLine(
+			GetWorld(),
+			CameraLocation,
+			Hit.Location,
+			FColor::Red,
+			false, 
+			-1.0f,
+			0,
+			3.0f
+		);*/
 	}
 	else if(bWasColliding)
 	{
+		// 충돌이 없으면 원래 거리로 서서히 복귀
+		CameraBoom->TargetArmLength = FMath::FInterpTo(
+			CameraBoom->TargetArmLength,
+			DefaultDistance,  // 원래 거리로 복귀
+			GetWorld()->GetDeltaSeconds(),
+			CameraSmoothSpeed
+		);
+		
 		CurrentInterpolationSpeed = CameraSmoothSpeed;
 		bWasColliding = false;
 		CollisionAdjustmentFactor = 1.0f;
@@ -288,19 +345,10 @@ void ULakituCamera::UpdateCameraXYPosition()
 	AActor* CameraBoomOwner = CameraBoom->GetOwner();
 	if (CameraBoomOwner == GetOwner())
 	{
-		// 현재 SpringArm의 상대 위치 가져오기
 		FVector RelativeLocation = CameraBoom->GetRelativeLocation();
-		
-		// 기존 XY 유지
 		FVector NewRelativeLocation = RelativeLocation;
-		
-		// Z축만 조정
 		static float DefaultZHeight = RelativeLocation.Z; // 처음 Z 높이 저장
-
-		// 카메라 시야 내에 캐릭터가 있는지 확인
 		bool bIsCharacterInCameraView = IsCharacterInCameraView();
-		
-		// Z축 조정 부분
 		float ZDiff = PreviousCharacterLocation.Z - CharacterLocation.Z;
 		/*GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red,
 			FString::Printf(TEXT("Z Adjust: %f"), ZDiff));*/
@@ -380,3 +428,4 @@ bool ULakituCamera::IsCharacterInCameraView()
 	
 	return bIsWithinView;
 }
+

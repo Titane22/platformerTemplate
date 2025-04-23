@@ -39,6 +39,12 @@ public:
 	void UpdateCameraXYPosition();
 
 	bool IsCharacterInCameraView();
+	
+	void SetCurrentCharacterStatus(bool bIsCurrent)
+	{
+		bIsCurrentCharacter = bIsCurrent;
+	}
+	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -78,6 +84,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Settings | Spring Arm")
 	bool bIsCharacterGrounded;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Settings")
+	bool bIsCurrentCharacter;
 
 	FVector LastImpactPoint;
 public:	

@@ -625,6 +625,7 @@ void AMario64Character::TagCharacter()
 		UE_LOG(LogTemp, Warning, TEXT("TagCharacter() !Potato || !Fox"));
 		return;
 	}
+	EnableCamera(false);
 
 	// TODO: Apply Easing Curve
 	AMario64Character* CurrentChar = Cast<AMario64Character>(PC->GetPawn());
@@ -633,12 +634,14 @@ void AMario64Character::TagCharacter()
 		PC->Possess(Fox);
 
 		Potato->SpawnDefaultController();
+		Fox->EnableCamera(true);
 	}
 	else
 	{
 		PC->Possess(Potato);
 
 		Fox->SpawnDefaultController();
+		Potato->EnableCamera(true);
 	}
 }
 
@@ -719,6 +722,11 @@ void AMario64Character::CallStop()
 	}
 	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("멈춰!"));
 	PartnerRef->MovementSwitchOnOff();
+}
+
+void AMario64Character::EnableCamera(bool bEnable)
+{
+	LakituCameraComponent->SetCurrentCharacterStatus(bEnable);
 }
 
 void AMario64Character::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

@@ -86,6 +86,7 @@ public:
 
 	AMario64Character* GetPartner() const { return PartnerRef; }
 
+	void EnableCamera(bool bEnable);
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
