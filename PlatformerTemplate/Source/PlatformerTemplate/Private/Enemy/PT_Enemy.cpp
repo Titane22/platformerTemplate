@@ -39,6 +39,7 @@ void APT_Enemy::BeginPlay()
 			AIC->RunBehaviorTree(BehaviorTreeAsset);
 		}
 	}
+	CurrentHealth = MaxHealth;
 }
 
 void APT_Enemy::Tick(float DeltaTime)
@@ -120,6 +121,10 @@ void APT_Enemy::ForceDestroy()
 
 void APT_Enemy::OnDamaged_Implementation()
 {
+	if (CurrentHealth <= 0.0f)
+	{
+		Die();
+	}
 }
 
 void APT_Enemy::OnDieMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -132,5 +137,18 @@ void APT_Enemy::OnDieMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 		}
 		Destroy();
 	}
+}
+
+float APT_Enemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
+	if (ActualDamage > 0.f && !bIsDying)
+	{
+		CurrentHealth -= ActualDamage;
+		OnDamaged();
+	}
+	
+	return ActualDamage;
 }
 

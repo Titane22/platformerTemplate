@@ -13,6 +13,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/DamageEvents.h"
+#include "Obstacles/BlockBase.h"
 
 AEnemy_Bull::AEnemy_Bull()
 	:Super()
@@ -29,8 +30,9 @@ AEnemy_Bull::AEnemy_Bull()
 	{
 		CapsuleComp->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
 		CapsuleComp->CanCharacterStepUpOn = ECB_No;
-		CapsuleComp->OnComponentHit.AddDynamic(this, &AEnemy_Bull::OnHit);
 	}
+
+	MaxHealth = 15.0f;
 }
 
 void AEnemy_Bull::BeginPlay()
@@ -39,6 +41,38 @@ void AEnemy_Bull::BeginPlay()
 
 	Potato = FindPlayer(APotatoCharacter::StaticClass());
 	Fox = FindPlayer(AFoxCharacter::StaticClass());
+	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AEnemy_Bull::OnHit);
+	
+	AttackDirection = FVector::ZeroVector;
+	StunTimer = 0.0f;
+}
+
+void AEnemy_Bull::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	switch (CurrentState)
+	{
+	case EBullState::Idle:
+		HandleIdle();
+		break;
+	case EBullState::Attack:
+		HandleAttack();
+		break;
+	case EBullState::Stun:
+		HandleStun();
+		StunTimer += DeltaTime;
+		if (StunTimer >= 2.0f) 
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("To Idle"));
+			CurrentState = EBullState::Idle;
+		}
+		break;
+	case EBullState::Dead:
+		break;
+	default:
+		break;
+	}
 }
 
 AMario64Character* AEnemy_Bull::GetTargetPlayer()
@@ -94,17 +128,34 @@ void AEnemy_Bull::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, U
 		{
 			return;
 		}
-		
 		ECollisionChannel CollisionChannel = OtherComp->GetCollisionObjectType();
+		if (RushSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, RushSound, GetActorLocation(), 0.0f);
+		}
+		AMario64Character* HitPlayer = Cast<AMario64Character>(OtherActor);
+		if (HitPlayer && HitPlayer->GetPlayerState() != EActionState::Burrowed)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Current State: %d"), HitPlayer->GetPlayerState()));
+			FPointDamageEvent DamageEvent(1.0f, Hit, -FVector::UpVector, nullptr);
+			//HitPlayer->TakeDamage(1.0f, DamageEvent, nullptr, this);
+
+			float ForceFactor = 3000.0f;
+
+			FVector DirectionVector = (HitPlayer->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+			DirectionVector.Z = 0.8f;
+
+			HitPlayer->LaunchCharacter(DirectionVector * ForceFactor, true, true);
+		}
 		
-		// WorldStatic(벽, 바닥 등)이나 WorldDynamic(움직이는 물체)와 충돌한 경우
-		if (CollisionChannel == ECC_WorldStatic || CollisionChannel == ECC_WorldDynamic)
+		ABlockBase* Block = Cast<ABlockBase>(OtherActor);
+		if (Block)
 		{
 			AAIController* AIC = Cast<AAIController>(GetController());
 			if (AIC)
 			{
 				AIC->StopMovement();
-				
+				CurrentState = EBullState::Stun;
 				UBlackboardComponent* BlackboardComp = AIC->GetBlackboardComponent();
 				if (BlackboardComp)
 				{
@@ -113,21 +164,89 @@ void AEnemy_Bull::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, U
 				}
 			}
 		}
-		
-		AMario64Character* HitPlayer = Cast<AMario64Character>(OtherActor);
-		if (HitPlayer)
+	}
+}
+
+void AEnemy_Bull::HandleIdle()
+{
+	CurrentState = EBullState::Attack;
+	if (CowSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, CowSound, GetActorLocation());
+	}
+	
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		AIController->SetFocus(GetTargetPlayer());
+	}
+
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(
+		TimerHandle,
+		[this]() 
 		{
-			FPointDamageEvent DamageEvent(1.0f, Hit, -FVector::UpVector, nullptr);
-			HitPlayer->TakeDamage(1.0f, DamageEvent, nullptr, this);
+			TargetPlayer = GetTargetPlayer();
+			if (TargetPlayer)
+			{
+				if (RushSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(this, RushSound, GetActorLocation());
+				}
+				AttackDirection = (TargetPlayer->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+				AttackDirection.Z = 0.0f;
+			}
+		},
+		PawingTime,
+		false
+	);
+}
 
-			float ForceFactor = 3000.0f;
+void AEnemy_Bull::HandleStun()
+{
+	TargetPlayer = nullptr;
+	AttackDirection = FVector::ZeroVector;
+}
 
-			FVector DirectionVector = (HitPlayer->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-			DirectionVector.Z = 0.8f;
+void AEnemy_Bull::HandleAttack()
+{
+	if (!TargetPlayer)
+	{
+		return;
+	}
+	
+	FVector ForwardDirection = AttackDirection.IsNearlyZero() ? GetActorForwardVector() : AttackDirection;
+	StunTimer = 0.0f;
 
-			HitPlayer->LaunchCharacter(DirectionVector * ForceFactor, true, true);
-			LaunchCharacter(-DirectionVector * ForceFactor * 0.7f, true, true);
-			// TODO: 플레이어 데미지 처리 등의 로직은 여기에 구현
+	if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+	{
+		MovementComp->MaxWalkSpeed = 1500.0f;
+		AddMovementInput(ForwardDirection, 1.0f);
+		
+		if (AAIController* AIController = Cast<AAIController>(GetController()))
+		{
+			AIController->StopMovement();
+			AIController->ClearFocus(EAIFocusPriority::Gameplay);
 		}
+	}
+}
+
+void AEnemy_Bull::Die_Implementation()
+{
+	Super::Die_Implementation();
+
+	CurrentState = EBullState::Dead;
+}
+
+void AEnemy_Bull::OnDamaged_Implementation()
+{
+	Super::OnDamaged_Implementation();
+	if (CurrentState == EBullState::Attack)
+	{
+		CurrentState = EBullState::Stun;
+		StunTimer = 0.0f;
+	}
+	if (StunSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, StunSound, GetActorLocation());
 	}
 }

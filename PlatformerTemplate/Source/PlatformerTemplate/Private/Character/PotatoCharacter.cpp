@@ -8,6 +8,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "Engine/DamageEvents.h"
+#include "Enemy/PT_Enemy.h"
 
 APotatoCharacter::APotatoCharacter()
 	:Super()
@@ -70,11 +72,20 @@ void APotatoCharacter::ImpulseForceOnPotatoHead()
 	{
 		if (!Actor)
 			continue;
-
-		if (ACharacter* CharacterOnHead = Cast<ACharacter>(Actor))
+		if (AMario64Character* Fox = Cast<AMario64Character>(Actor))
 		{
+			Fox->LaunchCharacter(LaunchVelocity, false, false);
+		}
+		else if(APT_Enemy* CharacterOnHead = Cast<APT_Enemy>(Actor))
+		{
+			FHitResult TempHit;
+			TempHit.ImpactPoint = Actor->GetActorLocation();
+			TempHit.ImpactNormal = FVector(0, 0, 1);
+			TempHit.Location = GetActorLocation();
+			
+			FPointDamageEvent DamageEvent(5.0f, TempHit, -FVector::UpVector, nullptr);
+			CharacterOnHead->TakeDamage(5.0f, DamageEvent, nullptr, this);
 			CharacterOnHead->LaunchCharacter(LaunchVelocity, false, false);
-			//TagCharacter();
 		}
 	}
 }
@@ -87,17 +98,35 @@ void APotatoCharacter::OnBurrowBoxHit(UPrimitiveComponent* HitComponent, AActor*
 	if (Hit.ImpactPoint.Z > BurrowBox->GetComponentLocation().Z)
 	{
 		OnPotatoHead.AddUnique(OtherActor);
-		if (AMario64Character* Fox = Cast<AMario64Character>(OtherActor))
-		{
-			Unburrow();
-		}
+		
+		Unburrow();
 	}
 }
 
 void APotatoCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (CurrentState == EActionState::Burrowed && OnPotatoHead.Num() > 0)
+	{
+		for (int32 i = OnPotatoHead.Num() - 1; i >= 0; --i)
+		{
+			AActor* Actor = OnPotatoHead[i];
+			
+			if (!IsValid(Actor))
+			{
+				OnPotatoHead.RemoveAt(i);
+				continue;
+			}
+			
+			float Distance = FVector::Dist(GetActorLocation(), Actor->GetActorLocation());
+			const float MaxDistance = 100.0f; 
+			
+			if (Distance > MaxDistance)
+			{
+				OnPotatoHead.RemoveAt(i);
+			}
+		}
+	}
 }
 
 bool APotatoCharacter::CheckPlatGround()
@@ -152,8 +181,11 @@ void APotatoCharacter::Burrow()
 		FVector BoxOrigin = BurrowBox->GetComponentLocation();
 		FVector BoxExtent = BurrowBox->GetScaledBoxExtent();
 
-		DrawDebugBox(GetWorld(), BoxOrigin, BoxExtent, FColor::Yellow, false, 3.0f);
-
+		//DrawDebugBox(GetWorld(), BoxOrigin, BoxExtent, FColor::Yellow, false, 3.0f);
+		if (BurrowMontage)
+		{
+			PlayAnimMontage(BurrowMontage);
+		}
 		BurrowBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		BurrowBox->OnComponentHit.AddDynamic(this, &APotatoCharacter::OnBurrowBoxHit);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -161,13 +193,18 @@ void APotatoCharacter::Burrow()
 		// TODO: Need to Check, if Other Actor can move up
 		/*GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Overlap);*/
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	}
 }
 
 void APotatoCharacter::Unburrow()
 {
-	SetState(EActionState::Idle);
+	
+	if (BurrowMontage)
+	{
+		StopAnimMontage(BurrowMontage);
+	}
 	
 	if (BurrowBox)
 	{
@@ -175,6 +212,7 @@ void APotatoCharacter::Unburrow()
 		BurrowBox->OnComponentHit.RemoveDynamic(this, &APotatoCharacter::OnBurrowBoxHit);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		GetCapsuleComponent()->SetCollisionEnabled(OrgCollisionEnabled);
 
 		if (OnPotatoHead.Num() > 0)
@@ -192,6 +230,7 @@ void APotatoCharacter::Unburrow()
 			ECollisionChannel Channel = static_cast<ECollisionChannel>(i);
 			GetCapsuleComponent()->SetCollisionResponseToChannel(Channel, OriginalCollisionResponses[i]);
 		}
-
 	}
+	//SetState(EActionState::Idle);
+
 }

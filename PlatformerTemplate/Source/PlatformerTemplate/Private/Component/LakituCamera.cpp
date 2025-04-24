@@ -71,7 +71,7 @@ void ULakituCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 
 	CheckCharacterGrounded();
 	UpdateCameraXYPosition();
-	//HandleCameraCollision();
+	HandleCameraCollision();
 }
 
 void ULakituCamera::InitializeCamera()
@@ -207,9 +207,12 @@ void ULakituCamera::HandleCameraCollision()
 	else if(bWasColliding)
 	{
 		// 충돌이 없으면 원래 거리로 서서히 복귀
+		// TargetArmLength를 먼저 DefaultDistance로 설정하고 부드럽게 적용
+		TargetArmLength = DefaultDistance;
+		
 		CameraBoom->TargetArmLength = FMath::FInterpTo(
 			CameraBoom->TargetArmLength,
-			DefaultDistance,  // 원래 거리로 복귀
+			DefaultDistance,
 			GetWorld()->GetDeltaSeconds(),
 			CameraSmoothSpeed
 		);
@@ -217,6 +220,22 @@ void ULakituCamera::HandleCameraCollision()
 		CurrentInterpolationSpeed = CameraSmoothSpeed;
 		bWasColliding = false;
 		CollisionAdjustmentFactor = 1.0f;
+	}
+	else
+	{
+		// 충돌 상태가 아닌 경우 TargetArmLength를 DefaultDistance로 유지
+		TargetArmLength = DefaultDistance;
+		
+		// 서서히 DefaultDistance로 조정 (만약 카메라가 잘못된 거리에 있는 경우)
+		if (FMath::Abs(CameraBoom->TargetArmLength - DefaultDistance) > 1.0f)
+		{
+			CameraBoom->TargetArmLength = FMath::FInterpTo(
+				CameraBoom->TargetArmLength,
+				DefaultDistance,
+				GetWorld()->GetDeltaSeconds(),
+				CameraSmoothSpeed
+			);
+		}
 	}
 }
 

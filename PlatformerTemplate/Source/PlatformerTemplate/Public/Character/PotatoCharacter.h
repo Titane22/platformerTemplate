@@ -72,6 +72,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* BurrowAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+	UAnimMontage* BurrowMontage;
+
 	ECollisionEnabled::Type OrgCollisionEnabled;
 	ECollisionResponse OriginalCollisionResponses[COL_MAX];
 

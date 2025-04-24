@@ -26,6 +26,8 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
 	UFUNCTION(BlueprintNativeEvent, Category = "Health")
 	void Die();
 	virtual void Die_Implementation();
@@ -40,6 +42,8 @@ public:
 	UFUNCTION()
 	void ForceDestroy();
 
+	float GetCurrenntHealth() const { return CurrentHealth; }
+
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float MovementSpeed = 300.0f;
@@ -49,7 +53,13 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	bool bIsDying = false;
-	
+
+	UPROPERTY(BlueprintReadOnly, Category = "Health")
+	float CurrentHealth;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Health")
+	float MaxHealth = 1.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 	UBehaviorTree* BehaviorTreeAsset;
 };

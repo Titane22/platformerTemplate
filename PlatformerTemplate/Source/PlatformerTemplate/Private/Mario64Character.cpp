@@ -15,6 +15,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "AI/AIC_PlayerBase.h"
 #include "../PlatformerTemplateGameMode.h"
+#include "Engine/DamageEvents.h"
 
 AMario64Character::AMario64Character()
 {
@@ -354,9 +355,11 @@ void AMario64Character::Landed(const FHitResult& Hit)
 {
 	if (APT_Enemy* Enemy = Cast<APT_Enemy>(Hit.GetActor()))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Destroy"));
-		LaunchCharacter(FVector(0.0f, 0.0f, 1000.0f), true, true);
-		Enemy->Die();
+		LaunchCharacter(FVector(0.0f, 0.0f, 800.0f), true, true);
+		
+		// FPointDamageEvent 사용 (구체적인 클래스 사용)
+		FPointDamageEvent DamageEvent(1.0f, Hit, FVector(0, 0, 1), nullptr);
+		Enemy->TakeDamage(1.0f, DamageEvent, GetController(), this);
 	}
 	else
 	{
