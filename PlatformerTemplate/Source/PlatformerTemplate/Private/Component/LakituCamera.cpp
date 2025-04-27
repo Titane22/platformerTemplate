@@ -171,6 +171,8 @@ void ULakituCamera::HandleCameraCollision()
 		QueryParams
 	))
 	{
+		if (Cast<APawn>(Hit.GetActor()) || Cast<ACharacter>(Hit.GetActor()))
+			return;
 		// 충돌한 경우, 카메라를 충돌 지점에서 약간 뒤로 위치시키도록 거리 계산
 		float NewTargetArmLength = (CharacterLocation - Hit.Location).Size() + 50.0f;  // 약간의 여유 공간 추가
 		

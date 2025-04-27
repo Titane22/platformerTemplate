@@ -25,6 +25,8 @@ public:
 
 	void SetLevelMaxScore(int32 MaxScoreToSet);
 
+	virtual void BeginPlay() override;
+
 protected:
 	UPROPERTY(BlueprintReadWrite, Category="Scoring")
 	float PlayerScore = 0.0f;
