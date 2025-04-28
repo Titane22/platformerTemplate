@@ -46,6 +46,9 @@ protected:
 	UPROPERTY()
 	AMario64Character* PlayerRef;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Key")
+	USoundBase* GettingKeySound;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Key")
 	bool bIsOwned = false;
 	

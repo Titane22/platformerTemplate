@@ -175,7 +175,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
 	float UTurnIdleTime = 0.2f;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
 	float WallJumpIdleTime = 0.15f;
 
@@ -187,6 +187,15 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	USoundBase* SingleJumpSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	USoundBase* LongJumpSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	USoundBase* StopSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	USoundBase* TagSound;
 
 	float CurrentMoveTime = 0.0f;
 

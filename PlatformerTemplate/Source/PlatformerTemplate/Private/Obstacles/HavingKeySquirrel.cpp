@@ -44,12 +44,12 @@ void AHavingKeySquirrel::Tick(float DeltaTime)
 	FVector StartLocation = SquirrelMesh->GetSocketLocation("hand_key_socket");
 	FVector EndLocation = StartLocation + GetActorRightVector() * 500.0f;
 
-	DrawDebugLine(
+	/*DrawDebugLine(
 		GetWorld(),
 		StartLocation,
 		EndLocation,
 		FColor::Red
-	);
+	);*/
 
 	FHitResult HitResult;
 	FCollisionQueryParams QueryParams;
@@ -171,6 +171,11 @@ void AHavingKeySquirrel::ExtractKey()
 
 		bKeyThrown = true;
 		TimeSinceThrow = 0.0f;
+
+		if (ExtractingKeySound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ExtractingKeySound, GetActorLocation());
+		}
 	}
 }
 

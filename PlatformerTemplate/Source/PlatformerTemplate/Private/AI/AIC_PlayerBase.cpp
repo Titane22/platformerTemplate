@@ -53,6 +53,7 @@ void AAIC_PlayerBase::Tick(float DeltaTime)
 	{
 		if (AMario64Character* PlayerCharacter = FindPlayerCharacter())
 		{
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("PlayerCharacter: %s"), *PlayerCharacter->GetName()));
 			BlackboardComponent->SetValueAsVector(TargetLocationKey, PlayerCharacter->GetActorLocation());
 		}
 	}

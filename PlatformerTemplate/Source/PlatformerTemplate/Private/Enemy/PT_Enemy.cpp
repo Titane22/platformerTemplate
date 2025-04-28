@@ -142,8 +142,9 @@ void APT_Enemy::OnDieMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 float APT_Enemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	
-	if (ActualDamage > 0.f && !bIsDying)
+	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Current Health: %d"), CurrentHealth));
+
+	if (ActualDamage >= 0.0f && !bIsDying)
 	{
 		CurrentHealth -= ActualDamage;
 		OnDamaged();

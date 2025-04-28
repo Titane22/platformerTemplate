@@ -238,7 +238,7 @@ void AMario64Character::Jump()
 	// TODO: Check if Max Speed
 	if (CurrentState == EActionState::Crouching && bWasRunning)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CurrentState == EActionState::Crouching && bWasRunning"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("CurrentState == EActionState::Crouching && bWasRunning"));
 		if (GetWorld()->GetTimeSeconds() - CurrentCrouchTime <= LongJumpIdelTime)
 		{
 			return PerformLongJump();
@@ -248,14 +248,15 @@ void AMario64Character::Jump()
 	// 공중에 있거나 이미 점프 중인 경우
 	if (GetCharacterMovement()->IsFalling() || CurrentState == EActionState::Flying)
 	{
-		// 벽 점프가 가능하고 허용 시간 내에 있는 경우
-		if (GetWorld()->GetTimeSeconds() - CurrentWallHitTime <= WallJumpIdleTime)
+		// TODO: Not Platformer Template
+			// 벽 점프가 가능하고 허용 시간 내에 있는 경우
+		/*if (GetWorld()->GetTimeSeconds() - CurrentWallHitTime <= WallJumpIdleTime)
 		{
 			PerformWallJump();
 			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, TEXT("벽 점프 실행!"));
 			return;
 		}
-		else
+		else*/
 		{
 			// 벽 점프 조건이 아니면 추가 점프 안함
 			return;
@@ -269,19 +270,19 @@ void AMario64Character::Jump()
 		GetCharacterMovement()->JumpZVelocity = 400.0f;
 		GetCharacterMovement()->GravityScale = IdleGravityScale;
 		JumpState = EJumpState::Double;
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, TEXT("Single"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green, TEXT("Single"));
 		break;
 	case EJumpState::Double:
 		GetCharacterMovement()->JumpZVelocity = 600.0f;
 		GetCharacterMovement()->GravityScale = DoubleJumpGravityScale;
 		JumpState = EJumpState::Triple;
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Double"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Double"));
 		break;
 	case EJumpState::Triple:
 		GetCharacterMovement()->JumpZVelocity = 780.0f;
 		GetCharacterMovement()->GravityScale = TripleJumpGravityScale;
 		JumpState = EJumpState::Single;
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Triple"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Triple"));
 		break;
 	}
 
@@ -302,7 +303,7 @@ void AMario64Character::Jump()
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("U-Turn Montage is Not Set"));
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("U-Turn Montage is Not Set"));
 		}
 	}
 
@@ -325,11 +326,32 @@ void AMario64Character::SetPartner(AMario64Character* ToSetPartner)
 void AMario64Character::MovementSwitchOnOff()
 {
 	bIsStopFromPartner = !bIsStopFromPartner;
+
+	if (bIsStopFromPartner && StopSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), StopSound, GetActorLocation());
+	}
+	
+	if (!bIsStopFromPartner)
+	{
+
+	}
 }
 
 void AMario64Character::PerformLongJump()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Jump::bIsCrouching && bWasRunning"));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Jump::bIsCrouching && bWasRunning"));
+	if (LongJumpSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			GetWorld(), 
+			LongJumpSound, 
+			GetActorLocation(),
+			1.0f,
+			1.0f,
+			0.3f
+		);
+	}
 	Super::UnCrouch();
 
 	GetCharacterMovement()->JumpZVelocity = 700.0f;
@@ -355,6 +377,7 @@ void AMario64Character::Landed(const FHitResult& Hit)
 {
 	if (APT_Enemy* Enemy = Cast<APT_Enemy>(Hit.GetActor()))
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Enemy"));
 		LaunchCharacter(FVector(0.0f, 0.0f, 800.0f), true, true);
 		
 		// FPointDamageEvent 사용 (구체적인 클래스 사용)
@@ -363,6 +386,7 @@ void AMario64Character::Landed(const FHitResult& Hit)
 	}
 	else
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Not Enemy"));
 		Super::Landed(Hit);
 
 		CurrentJumpTime = GetWorld()->GetTimeSeconds();
@@ -441,7 +465,7 @@ void AMario64Character::Crouch(const FInputActionValue& Value)
 		if (bWasRunning)
 		{
 			//SetState(EActionState::Sliding);
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Crouch::bWasRunning"));
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Crouch::bWasRunning"));
 			// TODO: 슬라이딩 커브
 		}
 		else
@@ -462,14 +486,14 @@ bool AMario64Character::IsWall(UPrimitiveComponent* Component, const FHitResult&
 {
 	if (!Component)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("IsWall: 충돌 컴포넌트 없음"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("IsWall: 충돌 컴포넌트 없음"));
 		return false;
 	}
 	
 	// 충돌 응답 확인
 	if (Component->GetCollisionResponseToChannel(ECC_Pawn) != ECR_Block)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("IsWall: 충돌 응답 Block 아님"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("IsWall: 충돌 응답 Block 아님"));
 		return false;
 	}
 
@@ -529,7 +553,7 @@ void AMario64Character::ResetLevel()
 		// 체크포인트가 있으면 RespawnPlayer 사용
 		if (GameMode->LastCheckPoint)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("GameMode->LastCheckPoint"));
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("GameMode->LastCheckPoint"));
 			GameMode->RespawnPlayer();
 			SetState(EActionState::Idle);
 		}
@@ -600,7 +624,7 @@ void AMario64Character::SetState(const EActionState NewState)
 	default:
 		GetCharacterMovement()->GravityScale = IdleGravityScale;
 		GetCharacterMovement()->MaxWalkSpeed = 230.f;
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("bIsMovementDisabled is false"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("bIsMovementDisabled is false"));
 		break;
 	}
 }
@@ -629,7 +653,10 @@ void AMario64Character::TagCharacter()
 		return;
 	}
 	EnableCamera(false);
-
+	if (TagSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), TagSound, GetActorLocation());
+	}
 	// TODO: Apply Easing Curve
 	AMario64Character* CurrentChar = Cast<AMario64Character>(PC->GetPawn());
 	if (CurrentChar == Potato)
@@ -719,11 +746,11 @@ void AMario64Character::CallStop()
 {
 	if (!PartnerRef)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("APotatoCharacter::CallStop() PartnerRef is Null"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("APotatoCharacter::CallStop() PartnerRef is Null"));
 		UE_LOG(LogTemp, Warning, TEXT("APotatoCharacter::CallStop() PartnerRef is Null"));
 		return;
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("멈춰!"));
+	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("멈춰!"));
 	PartnerRef->MovementSwitchOnOff();
 }
 

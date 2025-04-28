@@ -200,7 +200,7 @@ void APotatoCharacter::Burrow()
 
 void APotatoCharacter::Unburrow()
 {
-	
+	SetState(EActionState::Idle);
 	if (BurrowMontage)
 	{
 		StopAnimMontage(BurrowMontage);
@@ -208,6 +208,8 @@ void APotatoCharacter::Unburrow()
 	
 	if (BurrowBox)
 	{
+		bIsBurrowed = false; 
+
 		BurrowBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		BurrowBox->OnComponentHit.RemoveDynamic(this, &APotatoCharacter::OnBurrowBoxHit);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);

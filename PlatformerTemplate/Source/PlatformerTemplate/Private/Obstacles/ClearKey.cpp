@@ -3,6 +3,7 @@
 
 #include "Obstacles/ClearKey.h"
 #include "Mario64Character.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AClearKey::AClearKey()
@@ -57,6 +58,11 @@ void AClearKey::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Othe
 		{
 		    OriginalTransform = GetActorTransform();
 		}
+
+        if (GettingKeySound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), GettingKeySound, GetActorLocation());
+        }
 	}
 }
 
@@ -76,7 +82,7 @@ void AClearKey::Tick(float DeltaTime)
         ResetKey();
         return;
     }
-    
+    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("AClearKey::Tick"));
     // 키 움직임 처리
     try
     {

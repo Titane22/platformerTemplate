@@ -69,4 +69,7 @@ protected:
 	float AcornThrowingCoolTime = 5.0f;
 
 	float CurrentThrowingTime = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Key")
+	USoundBase* ExtractingKeySound;
 };

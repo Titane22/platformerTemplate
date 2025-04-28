@@ -8,6 +8,7 @@
 #include "Mario64Character.h"
 #include "AIController.h"
 #include "Engine/DamageEvents.h"
+#include "Kismet/GameplayStatics.h"
 
 AEnemy_Wolf::AEnemy_Wolf()
 	:Super()
@@ -30,11 +31,16 @@ void AEnemy_Wolf::Die_Implementation()
 {
 	DieMontage = DieMont;
 	Super::Die_Implementation();
+	if (DeadSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeadSound, GetActorLocation());
+	}
 }
 
 void AEnemy_Wolf::OnDamaged_Implementation()
 {
-	
+	Super::OnDamaged_Implementation();
+
 }
 
 void AEnemy_Wolf::BeginPlay()

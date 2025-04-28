@@ -42,6 +42,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	float AttackCooldown = 2.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VFX")
 	UAnimMontage* DieMont;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VFX")
+	USoundBase* DeadSound;
 };
