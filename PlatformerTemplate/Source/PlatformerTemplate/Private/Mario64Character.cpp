@@ -59,6 +59,12 @@ void AMario64Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 void AMario64Character::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	AAIC_PlayerBase* ControllerRef = Cast<AAIC_PlayerBase>(GetController());
+	if (!ControllerRef)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("컨트롤러가 없습니다! 캐릭터: %s"), *GetNameSafe(this));
+		return;
+	}
 	// 점프 상태 업데이트
 	if (GetCharacterMovement()->IsMovingOnGround() && 
 		GetWorld()->GetTimeSeconds() - CurrentJumpTime > NextJumpMaxIdleTime)
@@ -377,7 +383,7 @@ void AMario64Character::Landed(const FHitResult& Hit)
 {
 	if (APT_Enemy* Enemy = Cast<APT_Enemy>(Hit.GetActor()))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Enemy"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("Enemy"));
 		LaunchCharacter(FVector(0.0f, 0.0f, 800.0f), true, true);
 		
 		// FPointDamageEvent 사용 (구체적인 클래스 사용)
@@ -386,7 +392,7 @@ void AMario64Character::Landed(const FHitResult& Hit)
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Not Enemy"));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, TEXT("Not Enemy"));
 		Super::Landed(Hit);
 
 		CurrentJumpTime = GetWorld()->GetTimeSeconds();

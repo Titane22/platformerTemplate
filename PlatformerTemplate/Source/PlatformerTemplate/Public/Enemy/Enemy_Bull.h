@@ -78,4 +78,5 @@ protected:
 	float PawingTime = 2.0f;
 
 	float StunTimer = 0.0f;
+
 };

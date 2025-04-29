@@ -9,6 +9,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Portal.generated.h"
 
+class ACheckPoint_Flag;
+
 UCLASS()
 class PLATFORMERTEMPLATE_API APortal : public AActor
 {
@@ -19,6 +21,8 @@ public:
 	APortal();
 
 	void SetLevel(FName ToSetLevelName) { TargetLevelName = ToSetLevelName; }
+
+	void SetFlag(ACheckPoint_Flag* ToMoveFlag) { ToTeleportFlag = ToMoveFlag; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -73,6 +77,9 @@ protected:
 	float PortalCooldown = 2.0f;
 
 	bool bIsPortalReady = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Portal")
+	ACheckPoint_Flag* ToTeleportFlag;
 
 	AActor* CurrentOverlappingActor;
 

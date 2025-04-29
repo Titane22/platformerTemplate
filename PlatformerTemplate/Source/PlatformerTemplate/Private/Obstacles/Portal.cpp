@@ -5,6 +5,9 @@
 #include "Components/PrimitiveComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "PlatformerTemplate/PlatformerTemplateGameMode.h"
+#include "Engine/Engine.h"
+#include "Mario64Character.h"
 
 // Sets default values
 APortal::APortal()
@@ -68,7 +71,7 @@ void APortal::UpdatePortalEffect(float Value)
 
 void APortal::ActivatePortal(AActor* OverlappingActor)
 {
-	if (!bIsPortalReady || TargetLevelName.IsNone())
+	if (!bIsPortalReady || !ToTeleportFlag)
 		return;
 
 	bIsPortalReady = false;
@@ -101,8 +104,15 @@ void APortal::ActivatePortal(AActor* OverlappingActor)
 
 void APortal::TravelToLevel()
 {
-	GetWorldTimerManager().ClearAllTimersForObject(this);
-	CurrentOverlappingActor = nullptr;
-	UGameplayStatics::OpenLevel(GetWorld(), TargetLevelName);
+	if (ToTeleportFlag)
+	{
+		if (APlatformerTemplateGameMode* GameMode = Cast<APlatformerTemplateGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			if (AMario64Character* Player = Cast<AMario64Character>(CurrentOverlappingActor))
+			{
+				GameMode->SetCheckpoint(ToTeleportFlag, Player);
+			}
+		}
+	}
 }
 

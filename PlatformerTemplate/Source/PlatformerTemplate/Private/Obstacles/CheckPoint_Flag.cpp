@@ -5,6 +5,8 @@
 #include "../PlatformerTemplateGameMode.h"
 #include "Mario64Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "Enemy/PT_Enemy.h"
+#include "AIController.h"
 
 // Sets default values
 ACheckPoint_Flag::ACheckPoint_Flag()
@@ -43,6 +45,13 @@ void ACheckPoint_Flag::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActo
 	{
 		if (APlatformerTemplateGameMode* GameMode = Cast<APlatformerTemplateGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
+			if (bIsBossRoom)
+			{
+				if (BossRef)
+				{
+					BossRef->EnableAI();
+				}
+			}
 			GameMode->SetCheckpoint(this, Player);
 			BoxCollision->OnComponentBeginOverlap.RemoveDynamic(this, &ACheckPoint_Flag::OnOverlapBegin);
 			if (CheckpointSound)
@@ -54,6 +63,7 @@ void ACheckPoint_Flag::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActo
 					1.0f, 1.0f, 0.25f);
 			}
 		}
+		
 	}
 }
 

@@ -7,6 +7,8 @@
 #include "Components/BoxComponent.h"
 #include "CheckPoint_Flag.generated.h"
 
+class APT_Enemy;
+
 UCLASS()
 class PLATFORMERTEMPLATE_API ACheckPoint_Flag : public AActor
 {
@@ -40,4 +42,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Checkpoints")
 	int32 CheckpointOrder = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Checkpoints")
+	bool bIsBossRoom = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss")
+	APT_Enemy* BossRef;
 };

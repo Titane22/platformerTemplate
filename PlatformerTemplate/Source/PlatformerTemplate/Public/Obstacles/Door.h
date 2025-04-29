@@ -9,6 +9,7 @@
 #include "Door.generated.h"
 
 class APortal;
+class ACheckPoint_Flag;
 
 UCLASS()
 class PLATFORMERTEMPLATE_API ADoor : public AActor
@@ -72,4 +73,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Levels")
 	FName TargetLevelName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Levels")
+	ACheckPoint_Flag* ToMoveFlag;
 };

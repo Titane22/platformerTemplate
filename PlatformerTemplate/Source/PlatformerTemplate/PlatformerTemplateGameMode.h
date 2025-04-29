@@ -25,11 +25,14 @@ public:
 
 	void TeleportCharacter(AMario64Character* ToTeleportCharacter, const FVector& SpawnLocation, const FRotator& SpawnRotration);
 
+	void ClearPartnerReferences();
+
 protected:
 	virtual void BeginPlay() override;
 
 	void SpawnCharacter(FVector SpawnLocation);
 
+	void SpawnPartner();
 public:
 	UPROPERTY()
 	class ACheckPoint_Flag* LastCheckPoint;

@@ -35,14 +35,7 @@ void ULakituCamera::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(
-		TimerHandle,
-		this,
-		&ULakituCamera::InitializeCamera,
-		1.0f,
-		false
-	);
+	InitializeCamera();
 
 	if (AMario64Character* OwnerCharacter = Cast<AMario64Character>(GetOwner()))
 	{
@@ -275,12 +268,14 @@ void ULakituCamera::RotateCameraAroundTarget(float Yaw, float Pitch)
 
 void ULakituCamera::AdjustCameraForMovement(float DeltaTime)
 {
+	UE_LOG(LogTemp, Error, TEXT("AMario64Character::GetOwner()"));
 	if (!GetOwner())
 		return;
 
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
 	if (!Character || !CameraBoom)
 		return;
+	UE_LOG(LogTemp, Error, TEXT("AMario64Character::Character"));
 
 	// Get character's velocity
 	FVector Velocity = Character->GetVelocity();
@@ -325,6 +320,7 @@ void ULakituCamera::AdjustCameraForMovement(float DeltaTime)
 	CurrentSocketOffset.Y = CurrentCameraOffset.Y;
 	CurrentSocketOffset.Z = CameraHeight; // Maintain the height
 	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("CurrentSocketOffset: %s"), *CurrentSocketOffset.ToString()));
+	UE_LOG(LogTemp, Error, TEXT("CurrentSocketOffset: %s"), *CurrentSocketOffset.ToString());
 	CameraBoom->SocketOffset = CurrentSocketOffset;
 }
 

@@ -108,7 +108,8 @@ void ADoor::FinishedDoorRotation()
 
 		if (Portal)
 		{
-			Portal->SetLevel(TargetLevelName);
+			//Portal->SetLevel(TargetLevelName);
+			Portal->SetFlag(ToMoveFlag);
 		}
 	}
 }

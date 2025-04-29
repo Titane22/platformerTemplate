@@ -45,34 +45,37 @@ void AEnemy_Bull::BeginPlay()
 	
 	AttackDirection = FVector::ZeroVector;
 	StunTimer = 0.0f;
+	bIsStopped = true;
 }
 
 void AEnemy_Bull::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	switch (CurrentState)
+	if (!bIsStopped)
 	{
-	case EBullState::Idle:
-		HandleIdle();
-		break;
-	case EBullState::Attack:
-		HandleAttack();
-		break;
-	case EBullState::Stun:
-		HandleStun();
-		StunTimer += DeltaTime;
-		if (StunTimer >= 2.0f) 
+		switch (CurrentState)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("To Idle"));
-			CurrentState = EBullState::Idle;
+		case EBullState::Idle:
+			HandleIdle();
+			break;
+		case EBullState::Attack:
+			HandleAttack();
+			break;
+		case EBullState::Stun:
+			HandleStun();
+			StunTimer += DeltaTime;
+			if (StunTimer >= 2.0f)
+			{
+				CurrentState = EBullState::Idle;
+			}
+			break;
+		case EBullState::Dead:
+			break;
+		default:
+			break;
 		}
-		break;
-	case EBullState::Dead:
-		break;
-	default:
-		break;
 	}
+	
 }
 
 AMario64Character* AEnemy_Bull::GetTargetPlayer()
@@ -136,9 +139,9 @@ void AEnemy_Bull::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, U
 		AMario64Character* HitPlayer = Cast<AMario64Character>(OtherActor);
 		if (HitPlayer && HitPlayer->GetPlayerState() != EActionState::Burrowed)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Current State: %d"), HitPlayer->GetPlayerState()));
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Current State: %d"), HitPlayer->GetPlayerState()));
 			FPointDamageEvent DamageEvent(1.0f, Hit, -FVector::UpVector, nullptr);
-			//HitPlayer->TakeDamage(1.0f, DamageEvent, nullptr, this);
+			HitPlayer->TakeDamage(1.0f, DamageEvent, nullptr, this);
 
 			float ForceFactor = 3000.0f;
 

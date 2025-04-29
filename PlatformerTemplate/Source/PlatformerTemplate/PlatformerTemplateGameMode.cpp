@@ -47,17 +47,8 @@ void APlatformerTemplateGameMode::SpawnCharacter(FVector SpawnLocation)
 		SpawnRotation
 	);
 
-	Fox = GetWorld()->SpawnActor<AFoxCharacter>(
-		FoxCharacterClass,
-		SpawnLocation + FVector(-50.0f, 0.0f, 0.0f),
-		SpawnRotation
-	);
-
-	if (Potato && Fox)
+	if (Potato)
 	{
-		Potato->SetPartner(Fox);
-		Fox->SetPartner(Potato);
-
 		if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 		{
 			PC->Possess(Potato);
@@ -74,16 +65,36 @@ void APlatformerTemplateGameMode::SpawnCharacter(FVector SpawnLocation)
 					}
 				}
 			}
+			SpawnPartner();
 		}
 
-		Fox->SpawnDefaultController();
 	}
 	else
 	{
 		if (!Potato) UE_LOG(LogTemp, Error, TEXT("Potato character failed to spawn"));
-		if (!Fox) UE_LOG(LogTemp, Error, TEXT("Fox character failed to spawn"));
-		
 		if (!PotatoCharacterClass) UE_LOG(LogTemp, Error, TEXT("PotatoCharacterClass is not set!"));
+	}
+}
+
+void APlatformerTemplateGameMode::SpawnPartner()
+{
+	FRotator SpawnRotation = FRotator(0.0f, 0.0f, 0.0f);
+
+	Fox = GetWorld()->SpawnActor<AFoxCharacter>(
+		FoxCharacterClass,
+		Potato->GetActorLocation() + FVector(-100.0f, 0.0f, 0.0f),
+		SpawnRotation
+	);
+
+	if (Fox)
+	{
+		Fox->SetPartner(Potato);
+		Potato->SetPartner(Fox);
+		Fox->SpawnDefaultController();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Fox character failed to spawn"));
 		if (!FoxCharacterClass) UE_LOG(LogTemp, Error, TEXT("FoxCharacterClass is not set!"));
 	}
 }
@@ -131,7 +142,11 @@ void APlatformerTemplateGameMode::RespawnPlayer()
 void APlatformerTemplateGameMode::SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMario64Character* IndicatorCharacterRef)
 {
 	LastCheckPoint = ToSetFlag;
-
+	if (!Fox || !Potato)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Fox or Potato is NULL"));
+		return;
+	}
 	if (!IndicatorCharacterRef)
 		return;
 
