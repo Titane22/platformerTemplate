@@ -187,7 +187,7 @@ void AFoxCharacter::HoldActor()
 		QueryParams
 	);
 
-	DrawDebugCapsule(
+	/*DrawDebugCapsule(
 		GetWorld(),
 		StartLocation + (EndLocation - StartLocation) * 0.5f,
 		CapsuleHalfHeight,
@@ -198,7 +198,7 @@ void AFoxCharacter::HoldActor()
 		5.0f,
 		0,
 		2.0f
-	);
+	);*/
 
 	if (bHit)
 	{

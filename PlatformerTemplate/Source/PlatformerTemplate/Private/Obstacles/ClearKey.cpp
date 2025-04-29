@@ -82,7 +82,6 @@ void AClearKey::Tick(float DeltaTime)
         ResetKey();
         return;
     }
-    GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("AClearKey::Tick"));
     // 키 움직임 처리
     try
     {

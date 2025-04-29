@@ -16,11 +16,7 @@ APotatoCharacter::APotatoCharacter()
 {
 	BurrowBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Burrow Collision"));
 	BurrowBox->SetupAttachment(RootComponent);
-	BurrowBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	BurrowBox->SetRelativeLocation(FVector(0.0f, 0.0f, -85.0f));
-
-	//BurrowTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Burrow Timeline"));
-	//UnburrowTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Unburrow Timeline"));
 }
 
 void APotatoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -35,23 +31,13 @@ void APotatoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void APotatoCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	if (BurrowBox)
+	{
+		BurrowBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 	OrgCollisionEnabled = GetCapsuleComponent()->GetCollisionEnabled();
 	SaveOriginalCollisionResponses();
 	EnableCamera(true);
-	/*if (BurrowCurve)
-	{
-		FOnTimelineFloat BurrowCallback;
-		BurrowCallback.BindUFunction(this, FName("UpdateBurrowHeight"));
-		BurrowTimeline->AddInterpFloat(BurrowCurve, BurrowCallback);
-	}
-
-	if (UnburrowCurve)
-	{
-		FOnTimelineFloat UnburrowCallback;
-		UnburrowCallback.BindUFunction(this, FName("UpdateUnburrowHeight"));
-		UnburrowTimeline->AddInterpFloat(UnburrowCurve, UnburrowCallback);
-	}*/
 }
 
 void APotatoCharacter::SaveOriginalCollisionResponses()
