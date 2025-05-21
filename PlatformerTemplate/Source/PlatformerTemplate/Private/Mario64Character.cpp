@@ -835,7 +835,7 @@ void AMario64Character::JumpToDestination(FVector Destination)
 	// 발사 속도 계산
 	FVector LaunchVelocity;
 	
-	DrawDebugSphere(GetWorld(), Destination, 20.0f, 8, FColor::Blue, false, 2.0f);
+	//DrawDebugSphere(GetWorld(), Destination, 20.0f, 8, FColor::Blue, false, 2.0f);
 	
 	bool bHasValidSolution = UGameplayStatics::SuggestProjectileVelocity_CustomArc(
 		this,                           // WorldContextObject
@@ -856,11 +856,11 @@ void AMario64Character::JumpToDestination(FVector Destination)
 		LaunchCharacter(LaunchVelocity * 2, true, true);
 		
 		// 디버그 시각화
-		DrawDebugLine(GetWorld(), GetActorLocation(), Destination, FColor::Green, false, 2.0f, 0, 2.0f);
+		//DrawDebugLine(GetWorld(), GetActorLocation(), Destination, FColor::Green, false, 2.0f, 0, 2.0f);
 		
 		// 발사 방향 표시
-		DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(),
-								 GetActorLocation() + LaunchVelocity.GetSafeNormal() * 200.0f,
-								 50.0f, FColor::Yellow, false, 2.0f);
+		//DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(),
+								 /*GetActorLocation() + LaunchVelocity.GetSafeNormal() * 200.0f,
+								 50.0f, FColor::Yellow, false, 2.0f);*/
 	}
 }

@@ -83,7 +83,7 @@ void AClearKey::Tick(float DeltaTime)
         return;
     }
     // 키 움직임 처리
-    try
+    if (PlayerRef && GetWorld())
     {
         FVector PlayerLocation = PlayerRef->GetActorLocation();
         
@@ -125,7 +125,7 @@ void AClearKey::Tick(float DeltaTime)
         
         KeyMesh->AddLocalRotation(FRotator(0.0f, 0.0f, 20.0f * DeltaTime));
     }
-    catch(...)
+    else
     {
         ResetKey();
     }

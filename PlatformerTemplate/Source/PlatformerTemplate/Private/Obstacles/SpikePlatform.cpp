@@ -125,7 +125,8 @@ void ASpikePlatform::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
 			float ForceFactor = 1000.0f;
 
 			FVector DirectionVector = (Player->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("ASpikePlatform::OnHit("));
+			Player->LaunchCharacter(DirectionVector * 1500, false, false);
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, TEXT("ASpikePlatform::OnHit("));
 		}
 	}
 }

@@ -159,7 +159,7 @@ void APlatformerTemplateGameMode::SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMa
 
 	float Distance = FVector::Distance(Potato->GetActorLocation(), Fox->GetActorLocation());
 
-	if (Distance >= 1000.0f)
+	if (Distance >= 100.0f)
 	{
 		FVector SpawnLocation = ToSetFlag->GetActorLocation() + FVector(0.0f, 150.0f, 50.0f);
 		FRotator SpawnRotration = FRotator(0.0f, 0.0f, 0.0f);
