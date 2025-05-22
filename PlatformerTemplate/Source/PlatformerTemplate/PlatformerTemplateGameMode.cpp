@@ -139,7 +139,7 @@ void APlatformerTemplateGameMode::RespawnPlayer()
 	SpawnCharacter(SpawnLocation);
 }
 
-void APlatformerTemplateGameMode::SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMario64Character* IndicatorCharacterRef)
+void APlatformerTemplateGameMode::SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMario64Character* IndicatorCharacterRef, bool bIsPortal)
 {
 	LastCheckPoint = ToSetFlag;
 	if (!Fox || !Potato)
@@ -171,6 +171,10 @@ void APlatformerTemplateGameMode::SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMa
 		else
 		{
 			TeleportCharacter(Potato, SpawnLocation, SpawnRotration);
+		}
+		if (bIsPortal)
+		{
+			TeleportCharacter(IndicatorCharacterRef, ToSetFlag->GetActorLocation() + FVector(0.0f, -150.0f, 50.0f), SpawnRotration);
 		}
 	}
 }

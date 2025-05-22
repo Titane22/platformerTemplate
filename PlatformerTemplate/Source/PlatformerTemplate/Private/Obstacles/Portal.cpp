@@ -110,7 +110,7 @@ void APortal::TravelToLevel()
 		{
 			if (AMario64Character* Player = Cast<AMario64Character>(CurrentOverlappingActor))
 			{
-				GameMode->SetCheckpoint(ToTeleportFlag, Player);
+				GameMode->SetCheckpoint(ToTeleportFlag, Player, true);
 			}
 		}
 	}

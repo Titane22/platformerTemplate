@@ -21,7 +21,7 @@ public:
 
 	void RespawnPlayer();
 
-	void SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMario64Character* IndicatorCharacterRef);
+	void SetCheckpoint(ACheckPoint_Flag* ToSetFlag, AMario64Character* IndicatorCharacterRef, bool bIsPortal = false);
 
 	void TeleportCharacter(AMario64Character* ToTeleportCharacter, const FVector& SpawnLocation, const FRotator& SpawnRotration);
 
