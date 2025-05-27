@@ -1,7 +1,12 @@
-# Download: https://drive.google.com/file/d/1KVCYTW8tScYrWYHsp9UBXwD4TxlPSuWr/view?usp=drive_link
+link: https://titane22.github.io/Titane22/GameDesign/potato-fox
 
 ## ゲーム概要
 このゲームは3Dプラットフォーマージャンルのゲームで、プレイヤーはマリオスタイルのキャラクターを操作してレベルを探索し、鍵を収集することを目標としています。様々な障害物やパズル要素を克服しながらレベルをクリアするゲームです。
+
+### 担当者: 一人で 開発
+
+### 作品のアピールポイント: 
+    - 二つのキャラクター別垂直/水平メカニズム
 
 ### ジャンル: 3Dプラットフォーマーゲーム
 
@@ -11,7 +16,7 @@
 - **メモリ**: 最低8GB RAM
 
 ### 実行方法:
-1. 添付の実行ファイル(.exe)をダブルクリックして実行
+1. PlatformerTemplate.exeをダブルクリックして実行
 2. ゲームが起動したら、メインメニューから「Start」>>「Play」ボタンを選択してゲームを開始
 
 ### 操作方法:
@@ -23,6 +28,7 @@
 - **Tab**: キャラクター変更
 - **Shift(Holding) + C + Space**: スーパージャンプ
 - **C**: 座る
+- **F**: 止まれ命令(Toggle)
 
 ## 開発過程で困難だった部分
 1. **Burrow** - ポテトキャラクターのしゃがみインタラクションが地面に埋もれることを望んでいましたが、地面に沈む現象があったため、その場でしゃがむアニメーションに変更し、1/2ブロックで代替しました。
@@ -41,7 +47,9 @@
 - ボスもメカニズムを組み合わせて倒す必要がある
 
 ## 参考資料
-- スーパーマリオ64スピードラン映像参考
+- スーパーマリオ64スピードラン映像参考: https://youtu.be/tyu1KO3x5Ps?si=gjObxHqCvRGU4jGm
+- Ladder System: https://youtu.be/cM1jlcRPpJM?si=TeXw6eyvq1c2HcPr
+- 座りアニメーション: https://youtu.be/0DQJkzLqCLk?si=jQm2_1bWzsliUn-S
 
 ## 追加開発計画
 - ゲームメカニズム
